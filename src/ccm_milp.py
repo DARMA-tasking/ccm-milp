@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, "../examples")
 
 from small import SmallProblem
+from figures import Illustration1, Illustration2
 
 class Config:
     def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float):
@@ -141,5 +142,5 @@ class CCM_MILP_Generator:
 
 #config = Config(False, 0, 0, 0, 0)
 config = Config(True, 1, 1e-9, 1e-15, 1e-9)
-s = CCM_MILP_Generator(config, SmallProblem())
+s = CCM_MILP_Generator(config, Illustration2())
 s.setupMILP()
