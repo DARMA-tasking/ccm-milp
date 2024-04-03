@@ -138,9 +138,15 @@ class CCM_MILP_Generator:
                                 sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications))) + \
                                 sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks))) <= W_max
 
+    def writeLPToFile(self, file_name : str):
+        self.problem.writeLP(file_name)
+
+    def solveLP(self):
         self.problem.solve()
 
 #config = Config(False, 0, 0, 0, 0)
-config = Config(True, 1, 1e-9, 1e-15, 1e-9)
+config = Config(True, 1, 1e-9, 1e-15, 1e-10)
 s = CCM_MILP_Generator(config, Illustration2())
 s.setupMILP()
+s.writeLPToFile("test.lp")
+#s.solveLP()
