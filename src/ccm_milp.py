@@ -5,6 +5,7 @@ sys.path.insert(0, "../examples")
 
 from small import SmallProblem
 from figures import Illustration1, Illustration2
+from gemma_small import GemmaSmall
 
 class Config:
     def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float):
@@ -75,9 +76,15 @@ class CCM_MILP_Generator:
         # Add the continuous variable to the problem
         self.problem += W_max
 
+        start_time = time.perf_counter()
+
         # Add equation 14, constraining every task to a single rank:
         for k in range(K):
             self.problem += sum(χ[i, k] for i in range(I)) == 1
+
+        end_time = time.perf_counter()
+        print(f"Added basic constraint in {end_time - start_time:0.4f}s")
+        start_time = time.perf_counter()
 
         for i in range(I):
             for n in range(N):
@@ -88,24 +95,51 @@ class CCM_MILP_Generator:
                 # Add equation 18
                 self.problem += φ[i, n] <= sum(χ[i, self.task_memory_block_mapping[n][p]] for p in range(len(self.task_memory_block_mapping[n])))
 
+        end_time = time.perf_counter()
+        print(f"Added shared blocks constraint in {end_time - start_time:0.4f}s")
+        start_time = time.perf_counter()
+
+        all_k_working_bytes_zero = True
+        for i in range(K):
+            if self.task_working_bytes[i] != 0:
+                all_k_working_bytes_zero = False
+
         for i in range(I):
-            for k in range(K):
+            if all_k_working_bytes_zero:
                 # Add equation 19
                 self.problem += (
                     sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
-                    self.task_working_bytes[k] * χ[i, k] +
                     sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
+            else:
+                for k in range(K):
+                    # Add equation 19
+                    self.problem += (
+                        sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
+                        self.task_working_bytes[k] * χ[i, k] +
+                        sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
+
+        end_time = time.perf_counter()
+        print(f"Added memory constraints in {end_time - start_time:0.4f}s")
+        start_time = time.perf_counter()
 
         if is_FWMP:
             for i in range(I):
                 for j in range(I):
                     for p in range(len(self.task_communications)):
+                        print(f"{ψ[i, j, p] <= χ[i, self.task_communications[p][0]]}")
+                        print(f"{ψ[i, j, p] <= χ[j, self.task_communications[p][1]]}")
+                        print(f"{ψ[i, j, p] >= χ[i, self.task_communications[p][0]] + χ[j, self.task_communications[p][1]] - 1}")
                         # Add equation 25
                         self.problem += ψ[i, j, p] <= χ[i, self.task_communications[p][0]]
                         # Add equation 26
                         self.problem += ψ[i, j, p] <= χ[j, self.task_communications[p][1]]
                         # Add equation 27
                         self.problem += ψ[i, j, p] >= χ[i, self.task_communications[p][0]] + χ[j, self.task_communications[p][1]] - 1
+
+        end_time = time.perf_counter()
+        if is_FWMP:
+            print(f"Added comm constraints in {end_time - start_time:0.4f}s")
+        start_time = time.perf_counter()
 
         if is_COMCP:
             for i in range(I):
@@ -138,6 +172,10 @@ class CCM_MILP_Generator:
                                 sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications))) + \
                                 sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks))) <= W_max
 
+        end_time = time.perf_counter()
+        print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
+        start_time = time.perf_counter()
+
     def writeLPToFile(self, file_name : str):
         self.problem.writeLP(file_name)
 
@@ -145,8 +183,8 @@ class CCM_MILP_Generator:
         self.problem.solve()
 
 #config = Config(False, 0, 0, 0, 0)
-config = Config(True, 1, 1e-9, 1e-15, 1e-10)
-s = CCM_MILP_Generator(config, Illustration2())
+config = Config(False, 1, 0, 0, 0)
+s = CCM_MILP_Generator(config, GemmaSmall())
 s.setupMILP()
 s.writeLPToFile("test.lp")
 #s.solveLP()
