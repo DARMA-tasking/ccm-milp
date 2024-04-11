@@ -126,9 +126,6 @@ class CCM_MILP_Generator:
             for i in range(I):
                 for j in range(I):
                     for p in range(len(self.task_communications)):
-                        print(f"{ψ[i, j, p] <= χ[i, self.task_communications[p][0]]}")
-                        print(f"{ψ[i, j, p] <= χ[j, self.task_communications[p][1]]}")
-                        print(f"{ψ[i, j, p] >= χ[i, self.task_communications[p][0]] + χ[j, self.task_communications[p][1]] - 1}")
                         # Add equation 25
                         self.problem += ψ[i, j, p] <= χ[i, self.task_communications[p][0]]
                         # Add equation 26
@@ -186,5 +183,5 @@ class CCM_MILP_Generator:
 config = Config(False, 1, 0, 0, 0)
 s = CCM_MILP_Generator(config, Small())
 s.setupMILP()
-s.writeLPToFile("test.lp")
-#s.solveLP()
+s.writeLPToFile("problem.lp")
+s.solveLP()
