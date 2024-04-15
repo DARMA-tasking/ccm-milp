@@ -73,24 +73,33 @@ program assignments
   ! sums in paper formulas
   integer :: sums(4)
 
-  ! integer to string conversion
-  character(32) :: int_to_str
   print *
   print *, "### Full Work Model Problem Example"
   print *
 
-  ! allocate assignments
-  I = 2
-  K = 3
-  M = 4
-  N = 2
-  allocate(u_l(K, N))
+  ! read and populate block-task assignments
+  u_l = read_logical_matrix("u.txt")
+  K = size(u_l, dim = 1)
+  N = size(u_l, dim = 2)
   allocate(u_i(K, N))
+  u_i = merge(1, 0, u_l)
+
+  ! read and populate task-rank assignments
+  chi_l = read_logical_matrix("chi.txt")
+  if (size(chi_l, dim = 2) /= K) then
+       print *, "Inconsistent block-task-rank assignments, exiting. ###"
+       stop 1, quiet=.TRUE.
+    end if
+  I = size(u_l, dim = 1)
+  allocate(chi_t(I, K))
+  chi_t = transpose(chi_l)
+  allocate(chi_i(I, K))
+  chi_i = merge(1, 0, chi_l)
+
+  ! allocate other assignments
+  M = 4
   allocate(phi_l(I, N))
   allocate(phi_i(I, N))
-  allocate(chi_l(I, K))
-  allocate(chi_t(I, K))
-  allocate(chi_i(I, K))
   allocate(w_l(K, K, M))
   allocate(w_i(K, K, M))
   allocate(chi_w_l(I, K))
@@ -100,18 +109,15 @@ program assignments
   allocate(psi_ub1_i(I, I, M))
   allocate(psi_ub2_i(I, I, M))
 
-  ! populate and print parameters
+  ! print parameters
   print *, "## Parameters:"
   print *, "I = ", int_to_str(I)
   print *, "K = ", int_to_str(K)
   print *, "M = ", int_to_str(M)
   print *, "N = ", int_to_str(N)
   print *
-  u_l(1,:) = [.TRUE. , .FALSE.]
-  u_l(2,:) = [.TRUE. , .FALSE.]
-  u_l(3,:) = [.FALSE., .TRUE. ]
-  call print_logical_matrix("u", K, N, u_l)
-  call print_integer_matrix("u", K, N, u_i)
+  call print_logical_matrix("u", u_l)
+  call print_integer_matrix("u", u_i)
   print *
   w_l(3,1,1) = .TRUE.
   w_l(3,2,2) = .TRUE.
@@ -119,28 +125,24 @@ program assignments
   w_l(2,1,4) = .TRUE.
   w_i = merge(1, 0, w_l)
   do mm = 1, M
-     call print_logical_matrix("w::"//trim(int_to_str(mm)), K, K, w_l(:,:,mm))
+     call print_logical_matrix("w::"//trim(int_to_str(mm)), w_l(:,:,mm))
   end do
   do mm = 1, M
-     call print_integer_matrix("w::"//trim(int_to_str(mm)), K, K, w_i(:,:,mm))
+     call print_integer_matrix("w::"//trim(int_to_str(mm)), w_i(:,:,mm))
   end do
   print *
 
   ! populate and print variables
   print *, "## Variables:"
-  chi_l(1,:) = [.TRUE. , .TRUE. , .FALSE.]
-  chi_l(2,:) = [.FALSE., .FALSE., .TRUE. ]
-  chi_t = transpose(chi_l)
-  chi_i = merge(1, 0, chi_l)
-  call print_logical_matrix("chi", I, K, chi_l)
-  call print_integer_matrix("chi", I, K, chi_i)
+  call print_logical_matrix("chi", chi_l)
+  call print_integer_matrix("chi", chi_i)
   print *
 
   ! compute and print task-rank matrices
   phi_l = matmul(chi_l, u_l)
   phi_i = merge(1, 0, phi_l)
-  call print_logical_matrix("phi", I, N, phi_l)
-  call print_integer_matrix("phi", I, N, phi_i)
+  call print_logical_matrix("phi", phi_l)
+  call print_integer_matrix("phi", phi_i)
   print *
   
   ! compute and print communication-rank tensors
@@ -148,11 +150,11 @@ program assignments
   do mm = 1, M
      chi_w_l = matmul(chi_l, w_l(:,:,mm))
      psi_l(:,:,mm) = matmul(chi_w_l, chi_t)
-     call print_logical_matrix("psi::"//trim(int_to_str(mm)), I, I, psi_l(:,:,mm))
+     call print_logical_matrix("psi::"//trim(int_to_str(mm)), psi_l(:,:,mm))
   end do
   do mm = 1, M
      psi_i = merge(1, 0, psi_l)
-     call print_integer_matrix("psi::"//trim(int_to_str(mm)), I, I, psi_i(:,:,mm))
+     call print_integer_matrix("psi::"//trim(int_to_str(mm)), psi_i(:,:,mm))
   end do
   print *
 
@@ -201,15 +203,15 @@ program assignments
   
   ! print tensor bounds
   do mm = 1, M
-     call print_integer_matrix("psi_lb::"//trim(int_to_str(mm)), I, I, psi_lb_i(:,:,mm))
+     call print_integer_matrix("psi_lb::"//trim(int_to_str(mm)), psi_lb_i(:,:,mm))
   end do
   print *
   do mm = 1, M
-     call print_integer_matrix("psi_ub1::"//trim(int_to_str(mm)), I, I, psi_ub1_i(:,:,mm))
+     call print_integer_matrix("psi_ub1::"//trim(int_to_str(mm)), psi_ub1_i(:,:,mm))
   end do
   print *
   do mm = 1, M
-     call print_integer_matrix("psi_ub2::"//trim(int_to_str(mm)), I, I, psi_ub2_i(:,:,mm))
+     call print_integer_matrix("psi_ub2::"//trim(int_to_str(mm)), psi_ub2_i(:,:,mm))
   end do
   print *
 
@@ -229,56 +231,102 @@ program assignments
   deallocate(phi_l)
   deallocate(u_i)
   deallocate(u_l)
-  print *, "End of example ###"
+  print *, "Program completed without errors ###"
   print *
+
+contains
+  ! read logical matrix from file
+  function read_logical_matrix(str) result(mat)
+    implicit none
+    ! pure function with logical matrix output
+    character(*), intent(in) :: str
+    logical, allocatable :: mat(:,:)
+
+    ! internal variables
+    integer :: ios, n_true, n_rows, n_cols, i, j
+    character(len=512) :: msg
+
+    ! open read-only file if it exists
+    open(unit=1, file=str, status="old", action="read", iostat=ios, iomsg=msg)
+    if (ios /= 0) then
+       print *, trim(msg)
+       stop 1, quiet=.TRUE.
+    end if
+
+    ! count number of true entries
+    n_true = -1
+    do
+       read(1, *, iostat=ios)
+       if (ios /= 0) exit
+       n_true = n_true + 1
+    end do
+    if (n_true < 1) then
+       print *, "No assignments, exiting. ###"
+       stop 1, quiet=.TRUE.
+    end if
+
+    ! rewind file, read and set matrix shape
+    rewind 1
+    read(1, *) n_rows, n_cols
+    allocate(mat(n_rows, n_cols))
+    mat = .FALSE.
+
+    ! read and assign true entries
+    do
+       read(1, *, iostat=ios) i, j
+       if (ios /= 0) exit
+       if (i > 0 .and. i <= n_rows .and. j > 0 .and. j <= n_cols) mat(i,j) = .TRUE.
+    end do
+    
+    ! close file
+    close(1)
+
+  end function read_logical_matrix
+
+  ! print logical matrix to console
+  subroutine print_logical_matrix(str, mat)
+    implicit none
+    ! read-only input variables
+    character(*), intent(in) :: str
+    logical, intent(in) :: mat(:,:)
+
+    ! iterate over matrix rows
+    integer :: rr
+    print *, "# Boolean ", str, " ="
+    do rr = 1, size(mat, dim = 1)
+       print *, mat(rr, 1:size(mat, dim = 2))
+    end do
+
+  end subroutine print_logical_matrix
+
+  ! print integer matrix to console
+  subroutine print_integer_matrix(str, mat)
+    implicit none
+    ! read-only input variables
+    character(*), intent(in) :: str
+    integer, intent(in) :: mat(:,:)
+
+    ! iterate over matrix rows
+    integer :: rr
+    print *, "# Integer ", str, " ="
+    do rr = 1, size(mat, dim = 1)
+       print *, mat(rr, 1:size(mat, dim = 2))
+    end do
+
+  end subroutine print_integer_matrix
+
+  ! convert integer to string
+  function int_to_str(I) result(str)
+    implicit none
+    ! pure function with pointer output
+    integer, intent(in) :: I
+    character(32) :: str
+
+    ! convert and adjust
+    write (str, *) I
+    str = adjustl(str)
+
+  end function int_to_str
 
 end program assignments
   
-! print logical matrix to console
-subroutine print_logical_matrix(str, n_rows, n_cols, mat)
-  implicit none
-  ! read-only input variables
-  character(*), intent(in) :: str
-  integer, intent(in) :: n_rows
-  integer, intent(in) :: n_cols
-  logical, intent(in) :: mat(n_rows, n_cols)
-
-  ! iterate over matrix rows
-  integer :: rr
-  print *, "# Boolean ", str, " ="
-  do rr = 1, n_rows
-    print *, mat(rr, 1:n_cols)
-  end do
-
-end subroutine print_logical_matrix
-
-! print integer matrix to console
-subroutine print_integer_matrix(str, n_rows, n_cols, mat)
-  implicit none
- ! read-only input variables
-  character(*), intent(in) :: str
-  integer, intent(in) :: n_rows
-  integer, intent(in) :: n_cols
-  integer, intent(in) :: mat(n_rows, n_cols)
-
-  ! iterate over matrix rows
-  integer :: rr
-  print *, "# Integer ", str, " ="
-  do rr = 1, n_rows
-    print *, mat(rr, 1:n_cols)
-  end do
-
-end subroutine print_integer_matrix
-
-! convert integer to string
-function int_to_str(I) result(str)
-  implicit none
-  ! pure function with pointer output
-  integer, intent(in) :: I
-  character(*) :: str
-
-  ! convert and adjust
-  write (str, *) I
-  str = adjustl(str)
-
-end function int_to_str
