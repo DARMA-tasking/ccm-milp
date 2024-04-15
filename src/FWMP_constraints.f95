@@ -1,6 +1,6 @@
 !                           DARMA Toolkit v. 1.0.0
 ! 
-! Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC
+! Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
 ! (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 ! Government retains certain rights in this software.
 ! 
@@ -33,7 +33,7 @@
 ! Questions? Contact darma@sandia.gov
 ! 
 
-program assignments
+program FWMP_constraints
   implicit none
   ! explicit integer declaration
   integer :: I, ii, jj
@@ -96,7 +96,7 @@ program assignments
        print *, "Inconsistent block-task-rank assignments, exiting. ###"
        stop 1, quiet=.TRUE.
     end if
-  I = size(u_l, dim = 1)
+  I = size(u_l, dim = 2)
   allocate(chi_t(I, K))
   chi_t = transpose(chi_l)
   allocate(chi_i(I, K))
@@ -376,5 +376,5 @@ contains
 
   end function int_to_str
 
-end program assignments
+end program FWMP_constraints
   
