@@ -84,6 +84,12 @@ program assignments
   allocate(u_i(K, N))
   u_i = merge(1, 0, u_l)
 
+  ! read and populate communication-task assignments
+  w_l = read_logical_tensor("w.txt", K)
+  M = size(w_l, dim = 3)
+  allocate(w_i(K, K, M))
+  w_i = merge(1, 0, w_l)
+
   ! read and populate task-rank assignments
   chi_l = read_logical_matrix("chi.txt")
   if (size(chi_l, dim = 2) /= K) then
@@ -96,12 +102,9 @@ program assignments
   allocate(chi_i(I, K))
   chi_i = merge(1, 0, chi_l)
 
-  ! allocate other assignments
-  M = 4
+  ! allocate derived assignments
   allocate(phi_l(I, N))
   allocate(phi_i(I, N))
-  allocate(w_l(K, K, M))
-  allocate(w_i(K, K, M))
   allocate(chi_w_l(I, K))
   allocate(psi_l(I, I, M))
   allocate(psi_i(I, I, M))
@@ -119,11 +122,6 @@ program assignments
   call print_logical_matrix("u", u_l)
   call print_integer_matrix("u", u_i)
   print *
-  w_l(3,1,1) = .TRUE.
-  w_l(3,2,2) = .TRUE.
-  w_l(2,3,3) = .TRUE.
-  w_l(2,1,4) = .TRUE.
-  w_i = merge(1, 0, w_l)
   do mm = 1, M
      call print_logical_matrix("w::"//trim(int_to_str(mm)), w_l(:,:,mm))
   end do
@@ -253,7 +251,7 @@ contains
        stop 1, quiet=.TRUE.
     end if
 
-    ! count number of true entries
+    ! count number of true entries then rewind
     n_true = -1
     do
        read(1, *, iostat=ios)
@@ -264,9 +262,9 @@ contains
        print *, "No assignments, exiting. ###"
        stop 1, quiet=.TRUE.
     end if
-
-    ! rewind file, read and set matrix shape
     rewind 1
+
+    ! read and set matrix shape
     read(1, *) n_rows, n_cols
     allocate(mat(n_rows, n_cols))
     mat = .FALSE.
@@ -282,6 +280,56 @@ contains
     close(1)
 
   end function read_logical_matrix
+
+  ! read logical tensor from file
+  function read_logical_tensor(str, n_tasks) result(ten)
+    implicit none
+    ! pure function with logical tensor output
+    character(*), intent(in) :: str
+    integer, intent(in) :: n_tasks
+    logical, allocatable :: ten(:,:,:)
+
+    ! internal variables
+    integer :: ios, n_slices, k, l, m
+    character(len=512) :: msg
+
+    ! open read-only file if it exists
+    open(unit=1, file=str, status="old", action="read", iostat=ios, iomsg=msg)
+    if (ios /= 0) then
+       print *, trim(msg)
+       stop 1, quiet=.TRUE.
+    end if
+
+    ! count number of slices then rewind
+    n_slices = 0
+    do
+       read(1, *, iostat=ios)
+       if (ios /= 0) exit
+       n_slices = n_slices + 1
+    end do
+    if (n_slices < 1) then
+       print *, "No slices, exiting. ###"
+       stop 1, quiet=.TRUE.
+    end if
+    rewind 1
+
+    ! set tensor shape
+    allocate(ten(n_tasks, n_tasks, n_slices))
+    ten = .FALSE.
+
+    ! read and assign true entries, one per slices
+    m = 0
+    do
+       read(1, *, iostat=ios) k, l
+       if (ios /= 0) exit
+       m = m + 1
+       if (k > 0 .and. k <= n_slices .and. l > 0 .and. l <= n_slices) ten(k,l,m) = .TRUE.
+    end do
+    
+    ! close file
+    close(1)
+
+  end function read_logical_tensor
 
   ! print logical matrix to console
   subroutine print_logical_matrix(str, mat)
