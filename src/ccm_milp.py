@@ -37,7 +37,6 @@ import pulp
 import time
 import sys
 sys.path.insert(0, "../examples")
-
 from small import SmallProblem
 from figures import Illustration1, Illustration2
 from  import Small
@@ -212,6 +211,7 @@ class CCM_MILP_Generator:
         self.problem.writeLP(file_name)
 
     def solveLP(self):
+        print("# Available LP solvers:", pulp.listSolvers(onlyAvailable=True))
         self.problem.solve()
 
 #config = Config(False, 0, 0, 0, 0)
