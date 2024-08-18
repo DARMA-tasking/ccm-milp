@@ -33,27 +33,49 @@
 # Questions? Contact darma@sandia.gov
 # 
 
-import pulp
-import time
 import sys
 sys.path.insert(0, "../examples")
-from small import SmallProblem
-from figures import Illustration1, Illustration2
-from small import SmallProblem
+import importlib
+import time
+import math
+import pulp
+avail_examples = [
+    ["small", "SmallProblem"],
+    ["synthetic_blocks", "SyntheticBlocks"],
+    ["gemma_small", "SmallProblem"]]
+
+def input_float(input_name: str, indent="  ", default=0.0):
+    """ Interactively retrieve input with float type. """
+    value = input(f"{indent}value of {input_name} [{default}]? ")
+    if not value:
+        return default
+    try:
+        value = float(value)
+    except:
+        raise TypeError(f"incorrect input type: type(value)")
+    return value
 
 class Config:
-    def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float):
+    def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float, use_mem_ub:bool):
+        print(f"# Instantiating {'FMWP' if is_FWMP else 'COMCP'} configuration with:")
+        print(f"  alpha = {alpha}")
+        print(f"  beta = {beta}")
+        print(f"  gamma = {gamma}")
+        print(f"  delta = {delta}")
+        print(f"  with{'' if use_mem_ub else 'out'} rank memory upper bound")
         self.is_FWMP = is_FWMP
         self.is_COMCP = not is_FWMP
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
+        self.use_mem_ub = use_mem_ub
 
 class CCM_MILP_Generator:
     def __init__(self, configuration : Config, input_problem):
-        self.config = configuration
+        print(f"# Instantiating {type(input_problem).__name__} problem")
 
+        self.config = configuration
         self.rank_mems = input_problem.rank_mems
         self.rank_working_bytes = input_problem.rank_working_bytes
         self.task_loads = input_problem.task_loads
@@ -73,7 +95,6 @@ class CCM_MILP_Generator:
 
         print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.I}")
         print(f"Ranks={self.I}, task_loads={self.K}, memory_blocks={self.N} comms={self.M}")
-
 
     def setupMILP(self):
         # Solving a minimization of a mixed-integer linear program
@@ -138,23 +159,25 @@ class CCM_MILP_Generator:
             if self.task_working_bytes[i] != 0:
                 all_k_working_bytes_zero = False
 
-        for i in range(I):
-            if all_k_working_bytes_zero:
-                # Add equation 19
-                self.problem += (
-                    sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
-                    sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
-            else:
-                for k in range(K):
+        # Include memory constraints when requested
+        if self.config.use_mem_ub:
+            for i in range(I):
+                if all_k_working_bytes_zero:
                     # Add equation 19
                     self.problem += (
                         sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
-                        self.task_working_bytes[k] * χ[i, k] +
                         sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
+                else:
+                    for k in range(K):
+                        # Add equation 19
+                        self.problem += (
+                            sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
+                            self.task_working_bytes[k] * χ[i, k] +
+                            sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
 
-        end_time = time.perf_counter()
-        print(f"Added memory constraints in {end_time - start_time:0.4f}s")
-        start_time = time.perf_counter()
+            end_time = time.perf_counter()
+            print(f"Added memory constraints in {end_time - start_time:0.4f}s")
+            start_time = time.perf_counter()
 
         if is_FWMP:
             for i in range(I):
@@ -214,9 +237,27 @@ class CCM_MILP_Generator:
         print("# Available LP solvers:", pulp.listSolvers(onlyAvailable=True))
         self.problem.solve()
 
-#config = Config(False, 0, 0, 0, 0)
-config = Config(False, 1, 0, 0, 0)
-s = CCM_MILP_Generator(config, SmallProblem())
+# Build example
+print("# Available examples:")
+for i, [file_name, class_name] in enumerate(avail_examples):
+    print(f"  {i}) {file_name}.{class_name}")
+example_id = int(input("  example index: "))
+if example_id not in range(len(avail_examples)):
+    raise ValueError(f"unvailable example index: {example_id}")
+print()
+
+# Generate and solve linear problem
+print("# Model configuration:")
+example = avail_examples[example_id]
+s = CCM_MILP_Generator(
+    Config(
+        (is_fwmp := (input("  FWMP [y/N]? ") == 'y')),
+        input_float("alpha") if is_fwmp else 1.0,
+        input_float("beta") if is_fwmp else 0.0,
+        input_float("gamma") if is_fwmp else 0.0,
+        input_float("delta") if is_fwmp else 0.0,
+        input("  bounded memory [y/N]? ") == 'y'),
+    getattr(importlib.import_module(example[0]), example[1])())
 s.setupMILP()
 s.writeLPToFile("problem.lp")
 s.solveLP()
