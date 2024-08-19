@@ -97,7 +97,8 @@ class CCM_MILP_Generator:
         print(f"Ranks={self.I}, task_loads={self.K}, memory_blocks={self.N} comms={self.M}")
 
     def setupMILP(self):
-        # Solving a minimization of a mixed-integer linear program
+        """ Solve a minimization of a mixed-integer linear program. """
+        # instantiante LP minimization problem
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
         # For convenience, make these local variables
@@ -203,16 +204,16 @@ class CCM_MILP_Generator:
         if is_FWMP:
             for i in range(I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
-                remote_blocks = []
-                for n in range(N):
-                    if self.memory_block_home[n] != i:
-                        remote_blocks.append(n)
+                remote_blocks = [n for n in range(N) if self.memory_block_home[n] != i]
+                #for n in range(N):
+                #    if self.memory_block_home[n] != i:
+                #        remote_blocks.append(n)
 
                 # For rank i, build a list of all the other machines (all but i) for the second term of equation 30
-                other_machines = []
-                for j in range(I):
-                    if j != i:
-                        other_machines.append(j)
+                other_machines = [j for j in range(I) if j != i]
+                #for j in range(I):
+                #    if j != i:
+                #        other_machines.append(j)
 
                 # Add equation 30 (σ(i,j) = {i,j})
                 self.problem += sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) + \
