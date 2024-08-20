@@ -215,17 +215,18 @@ class CCM_MILP_Generator:
                 #    if j != i:
                 #        other_machines.append(j)
 
-                # Add equation 30 (σ(i,j) = {i,j})
-                self.problem += sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) + \
-                                sum(beta * ψ[i, j, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) + \
-                                sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications))) + \
-                                sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks))) <= W_max
+                # Compute unchanging terms in equation 30
+                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) 
+                gamma_term = sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications)))
+                delta_term = sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks)))
+                
+                # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
+                self.problem += alpha_term + gamma_term + delta_term + sum(
+                    beta * ψ[i, j, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
 
-                # Add equation 30 (σ(i,j) = {j,i})
-                self.problem += sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) + \
-                                sum(beta * ψ[j, i, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) + \
-                                sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications))) + \
-                                sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks))) <= W_max
+                # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
+                self.problem += alpha_term + gamma_term + delta_term + sum(
+                    beta * ψ[j, i, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
 
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
