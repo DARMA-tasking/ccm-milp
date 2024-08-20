@@ -56,7 +56,9 @@ def input_float(input_name: str, indent="  ", default=0.0):
     return value
 
 class Config:
-    def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float, use_mem_ub:bool):
+    def __init__(self, is_FWMP: bool,
+                 alpha: float, beta: float, gamma: float, delta: float,
+                 preserve_clusters:bool, use_mem_ub:bool):
         print(f"# Instantiating {'FMWP' if is_FWMP else 'COMCP'} configuration with:")
         print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
@@ -70,6 +72,7 @@ class Config:
         self.gamma = gamma
         self.delta = delta
         self.use_mem_ub = use_mem_ub
+        self.preserve_clusters = preserve_clusters
 
 class CCM_MILP_Generator:
     def __init__(self, configuration : Config, input_problem):
@@ -258,7 +261,8 @@ s = CCM_MILP_Generator(
         input_float("beta") if is_fwmp else 0.0,
         input_float("gamma") if is_fwmp else 0.0,
         input_float("delta") if is_fwmp else 0.0,
-        input("  bounded memory [y/N]? ") == 'y'),
+        input("  bounded memory [y/N]? ") == 'y',
+        input("  preserve clusters [y/N]? ") == 'y'),
     getattr(importlib.import_module(example[0]), example[1])())
 s.setupMILP()
 s.writeLPToFile("problem.lp")
