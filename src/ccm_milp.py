@@ -117,6 +117,7 @@ class CCM_MILP_Generator:
 
         is_COMCP = self.config.is_COMCP
         is_FWMP = self.config.is_FWMP
+        preserve_clusters = self.config.preserve_clusters
 
         # χ: ranks <- tasks, I x K, binary variables in MILP
         χ = pulp.LpVariable.dicts("χ", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
@@ -208,15 +209,9 @@ class CCM_MILP_Generator:
             for i in range(I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
                 remote_blocks = [n for n in range(N) if self.memory_block_home[n] != i]
-                #for n in range(N):
-                #    if self.memory_block_home[n] != i:
-                #        remote_blocks.append(n)
 
                 # For rank i, build a list of all the other machines (all but i) for the second term of equation 30
                 other_machines = [j for j in range(I) if j != i]
-                #for j in range(I):
-                #    if j != i:
-                #        other_machines.append(j)
 
                 # Compute unchanging terms in equation 30
                 alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) 
@@ -225,11 +220,21 @@ class CCM_MILP_Generator:
                 
                 # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[i, j, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    beta * ψ[i, j, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
 
                 # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[j, i, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    beta * ψ[j, i, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                
+            if preserve_clusters:
+                end_time = time.perf_counter()
+                # Add cluster-preserving constraints
+                for n in range(N):
+                    self.problem += sum(φ[i, n] for i in range(I)) == 1
+                print(f"Added cluster preserving constraints in {end_time - start_time:0.4f}s")
+                start_time = time.perf_counter()
 
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
