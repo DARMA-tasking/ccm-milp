@@ -58,7 +58,7 @@ def input_float(input_name: str, indent="  ", default=0.0):
 class Config:
     def __init__(self, is_FWMP: bool,
                  alpha: float, beta: float, gamma: float, delta: float,
-                 preserve_clusters:bool, use_mem_ub:bool):
+                 use_mem_ub:bool, preserve_clusters:bool):
         print(f"# Instantiating {'FMWP' if is_FWMP else 'COMCP'} configuration with:")
         print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
@@ -214,10 +214,10 @@ class CCM_MILP_Generator:
                 other_machines = [j for j in range(I) if j != i]
 
                 # Compute unchanging terms in equation 30
-                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) 
+                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K))
                 gamma_term = sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications)))
                 delta_term = sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks)))
-                
+
                 # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
                     beta * ψ[i, j, p] * self.task_communications[p][2]
