@@ -15,4 +15,3 @@ A Fortran 90 program to verify the following MILP assignment constraints in the 
 
 #### What to Expect:
 A text output in the terminal that will verify the aforementioned equations and examples.
-
