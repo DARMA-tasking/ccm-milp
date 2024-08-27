@@ -1,23 +1,23 @@
 #                           DARMA Toolkit v. 1.0.0
-# 
+#
 # Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # * Redistributions of source code must retain the above copyright notice,
 #   this list of conditions and the following disclaimer.
-# 
+#
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# 
+#
 # * Neither the name of the copyright holder nor the names of its
 #   contributors may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,9 +29,9 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 # Questions? Contact darma@sandia.gov
-# 
+#
 
 import sys
 sys.path.insert(0, "../examples")
@@ -56,7 +56,9 @@ def input_float(input_name: str, indent="  ", default=0.0):
     return value
 
 class Config:
-    def __init__(self, is_FWMP : bool, alpha : float, beta : float, gamma : float, delta : float, use_mem_ub:bool):
+    def __init__(self, is_FWMP: bool,
+                 alpha: float, beta: float, gamma: float, delta: float,
+                 use_mem_ub:bool, preserve_clusters:bool):
         print(f"# Instantiating {'FMWP' if is_FWMP else 'COMCP'} configuration with:")
         print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
@@ -70,6 +72,7 @@ class Config:
         self.gamma = gamma
         self.delta = delta
         self.use_mem_ub = use_mem_ub
+        self.preserve_clusters = preserve_clusters
 
 class CCM_MILP_Generator:
     def __init__(self, configuration : Config, input_problem):
@@ -114,6 +117,7 @@ class CCM_MILP_Generator:
 
         is_COMCP = self.config.is_COMCP
         is_FWMP = self.config.is_FWMP
+        preserve_clusters = self.config.preserve_clusters
 
         # χ: ranks <- tasks, I x K, binary variables in MILP
         χ = pulp.LpVariable.dicts("χ", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
@@ -205,28 +209,32 @@ class CCM_MILP_Generator:
             for i in range(I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
                 remote_blocks = [n for n in range(N) if self.memory_block_home[n] != i]
-                #for n in range(N):
-                #    if self.memory_block_home[n] != i:
-                #        remote_blocks.append(n)
 
                 # For rank i, build a list of all the other machines (all but i) for the second term of equation 30
                 other_machines = [j for j in range(I) if j != i]
-                #for j in range(I):
-                #    if j != i:
-                #        other_machines.append(j)
 
                 # Compute unchanging terms in equation 30
-                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K)) 
+                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K))
                 gamma_term = sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications)))
                 delta_term = sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks)))
-                
+
                 # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[i, j, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    beta * ψ[i, j, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
 
                 # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[j, i, p] * self.task_communications[p][2] for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    beta * ψ[j, i, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+
+            if preserve_clusters:
+                end_time = time.perf_counter()
+                # Add cluster-preserving constraints
+                for n in range(N):
+                    self.problem += sum(φ[i, n] for i in range(I)) == 1
+                print(f"Added cluster preserving constraints in {end_time - start_time:0.4f}s")
+                start_time = time.perf_counter()
 
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
@@ -258,7 +266,8 @@ s = CCM_MILP_Generator(
         input_float("beta") if is_fwmp else 0.0,
         input_float("gamma") if is_fwmp else 0.0,
         input_float("delta") if is_fwmp else 0.0,
-        input("  bounded memory [y/N]? ") == 'y'),
+        input("  bounded memory [y/N]? ") == 'y',
+        input("  preserve clusters [y/N]? ") == 'y'),
     getattr(importlib.import_module(example[0]), example[1])())
 s.setupMILP()
 s.writeLPToFile("problem.lp")
