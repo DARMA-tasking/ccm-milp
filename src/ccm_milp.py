@@ -259,7 +259,7 @@ class CCM_MILP_Generator:
         self.writeLPToFile("problem.lp")
         print("# Available LP solvers:", pulp.listSolvers(onlyAvailable=True))
         self.problem.solve()
-    
+
 def run_interactive():
     # Build example
     print("# Available examples:")
@@ -325,7 +325,7 @@ def run_batch(file_name: str):
             c_bool.get("preserve_clusters", False)),
         getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
     ccm_problem.solveLP()
-    
+
 def main(argv):
     # Parse possible command-line arguments
     try:
