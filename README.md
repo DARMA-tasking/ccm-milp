@@ -7,6 +7,7 @@ A Python program to build and solve the CCM-MILP problems, with a set of example
 * Python 3.x
 
 #### Execution:
+* `cd src/`
 * either in interactive mode: `python ccm-milp.py`;
 * or in interactive mode with a configuration file in YAML format: `python -c <configuration file name>`
 
