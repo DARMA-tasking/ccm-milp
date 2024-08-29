@@ -33,14 +33,15 @@
 # Questions? Contact darma@sandia.gov
 #
 
+
 import sys
-sys.path.insert(0, "../examples")
 import getopt
-import yaml
 import importlib
-import time
-import math
 import pulp
+import time
+import yaml
+
+sys.path.insert(0, "../examples")
 
 # Available CCM-MILP examples
 avail_examples = [
@@ -62,8 +63,8 @@ def input_float(input_name: str, indent="  ", default=0.0):
         return default
     try:
         value = float(value)
-    except:
-        raise TypeError(f"incorrect input type: type(value)")
+    except Exception as exc:
+        raise TypeError("incorrect input type: type(value)") from exc
     return value
 
 class Config:
@@ -109,6 +110,8 @@ class CCM_MILP_Generator:
 
         print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.I}")
         print(f"Ranks={self.I}, task_loads={self.K}, memory_blocks={self.N} comms={self.M}")
+
+        self.problem = None
 
     def setupMILP(self):
         """ Solve a minimization of a mixed-integer linear program. """
@@ -289,9 +292,9 @@ def run_batch(file_name: str):
     # Try to read YAML configuration file
     parameters = {}
     try:
-        with open(file_name) as f:
+        with open(file_name, "r", encoding="utf-8") as f:
             parameters = yaml.safe_load(f)
-    except:
+    except: # pylint: disable=bare-except
         print ("*** Could not parse", file_name)
         sys.exit(1)
 
