@@ -1,0 +1,4 @@
+# List of python dependencies
+# install using: pip install -r requirements.txt
+pulp
+pyyaml

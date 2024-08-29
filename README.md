@@ -1,17 +1,15 @@
 ### Artifact: `assignments.f90`
 
 #### Description:
-A Fortran 90 program to verify the following MILP assignment constraints in the conference article: (16), (24), (25), (26), and (27) as realized for the examples of Figures 2 & 3.
+A Python program to build and solve the CCM-MILP problems, with a set of examples.
 
 #### Requirements:
-* a Fortran 90-compatible compiler, e.g. [gfortran](https://gcc.gnu.org/wiki/GFortran);
-* at least version 3.10 of [CMake](https://cmake.org/).
+* Python 3.x
 
-#### Build and Run on *nix Systems:
-* execute `ccmake .` where `assignments.f90` is located on your system, or replace `.` with the path to it if an out-of-source build is preferred, and select the desired Fotran compiler;
-* configure by pressing `c` then generate the `makefile` by pressing `g`;
-* build with `make`;
-* run the generated `assignments` executable.
+#### Execution:
+* `cd src/`
+* either in interactive mode: `python ccm-milp.py`;
+* or in interactive mode with a configuration file in YAML format: `python -c <configuration file name>`
 
 #### What to Expect:
-A text output in the terminal that will verify the aforementioned equations and examples.
+A text output in the terminal with the results of the optimization process, along with a `.lp` file containing the generated linear program.
