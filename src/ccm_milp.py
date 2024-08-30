@@ -46,7 +46,8 @@ sys.path.insert(0, "../examples")
 # Available CCM-MILP examples
 avail_examples = [
     ["small", "SmallProblem"],
-    ["synthetic_blocks", "SyntheticBlocks"]]
+    ["synthetic_blocks", "SyntheticBlocks"],
+    ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"]]
 
 # Default CCM parameter values
 default_parameters = {
