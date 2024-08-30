@@ -33,12 +33,12 @@
 # Questions? Contact darma@sandia.gov
 #
 
-
 import sys
 import getopt
 import importlib
-import pulp
 import time
+
+import pulp
 import yaml
 
 sys.path.insert(0, "../examples")
@@ -47,7 +47,8 @@ sys.path.insert(0, "../examples")
 avail_examples = [
     ["small", "SmallProblem"],
     ["synthetic_blocks", "SyntheticBlocks"],
-    ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"]]
+    ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"],
+    ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster"]]
 
 # Default CCM parameter values
 default_parameters = {
