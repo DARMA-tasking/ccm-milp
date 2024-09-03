@@ -1,0 +1,13 @@
+name: hello test
+
+on:
+  push
+
+jobs:
+  hello:
+    name: Display hello
+    runs-on: ubuntu-latest
+    steps:
+      - name: hello
+        run: |
+          echo "Hello !"
