@@ -38,22 +38,6 @@ import getopt
 import pulp
 import os;
 
-sys.path.insert(0, "../examples")
-
-# Available CCM-MILP examples
-avail_examples = [
-    ["small", "SmallProblem"],
-    ["synthetic_blocks", "SyntheticBlocks"],
-    ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"],
-    ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster"]]
-
-# Default CCM parameter values
-default_parameters = {
-    "alpha": 1.0,
-    "beta": 0.0,
-    "gamma": 0.0,
-    "delta": 0.0}
- 
 def run_batch(fileName: str, solverName: str):
     # Init        
     error = False 
@@ -80,9 +64,12 @@ def run_batch(fileName: str, solverName: str):
     
     # Load problem file
     _, model = pulp.LpProblem.fromMPS(fileName)
+        
+    # Solver 
+    solver = pulp.getSolver(solver=solverName, keepFiles=True)
 
     # Set solver
-    model.setSolver(pulp.getSolver(solver=solverName, keepFiles=True))
+    model.setSolver(solver)
     
     # Solve the problem 
     model.solve()

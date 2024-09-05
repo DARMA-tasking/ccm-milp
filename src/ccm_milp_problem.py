@@ -37,19 +37,23 @@ import sys
 import getopt
 import importlib
 import yaml
+import os
 
 from modules.configuration import Config
 from modules.generator import CCM_MILP_Generator
 from modules.tools import Tools
 
-sys.path.insert(0, "../examples")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../examples"))
 
 # Available CCM-MILP examples
 avail_examples = [
     ["small", "SmallProblem"],
     ["synthetic_blocks", "SyntheticBlocks"],
     ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"],
-    ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster"]]
+    ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster"],
+    ["illustration_1", "Illustration1"],
+    ["illustration_2", "Illustration2"]
+]
 
 # Default CCM parameter values
 default_parameters = {

@@ -1,3 +1,7 @@
 venv/
 __pycache__
-problem.lp
+*.lp
+*.mps
+*.sol
+.tox/*
+.vscode/*

@@ -86,15 +86,15 @@ class CCM_MILP_Generator:
         preserve_clusters = self.config.preserve_clusters
 
         # χ: ranks <- tasks, I x K, binary variables in MILP
-        χ = pulp.LpVariable.dicts("χ", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
+        χ = pulp.LpVariable.dicts("CHI", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
 
         # φ: ranks <- shared blocks, I x N, binary variables in MILP
-        φ = pulp.LpVariable.dicts("φ", ((i, n) for i in range(I) for n in range(N)), cat='Binary')
+        φ = pulp.LpVariable.dicts("PHI", ((i, n) for i in range(I) for n in range(N)), cat='Binary')
 
         ψ = dict()
         if is_FWMP:
             # ψ: ranks <- communications, I x I x M, binary variables in MILP
-            ψ = pulp.LpVariable.dicts("ψ", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
+            ψ = pulp.LpVariable.dicts("PSI", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
 
         # W_max: continuous variable in MILP for work defined by CCM model
         W_max = pulp.LpVariable("W_max", lowBound=0, cat='Continuous')
