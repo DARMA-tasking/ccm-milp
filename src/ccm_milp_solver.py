@@ -70,7 +70,7 @@ def run_batch(fileName: str, solverName: str):
 
     # Set solver
     model.setSolver(solver)
-    
+
     # Solve the problem 
     model.solve()
 
@@ -84,7 +84,7 @@ def main(argv):
         sys.exit(1)
 
     # Default execution mode is interactive
-    fileName = 'problem.mps'
+    fileName = os.path.join(os.path.dirname(__file__), 'problem.mps')
         
     # Default solver value ['GLPK_CMD', 'PULP_CBC_CMD', 'COIN_CMD']
     solverName = 'COIN_CMD'

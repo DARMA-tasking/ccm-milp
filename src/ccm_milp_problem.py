@@ -39,33 +39,22 @@ import importlib
 import yaml
 import os
 
-from modules.configuration import Config
+from modules.configuration import Config, Examples, Parameters
 from modules.generator import CCM_MILP_Generator
 from modules.tools import Tools
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../examples"))
 
 # Available CCM-MILP examples
-avail_examples = [
-    ["small", "SmallProblem"],
-    ["synthetic_blocks", "SyntheticBlocks"],
-    ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster"],
-    ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster"],
-    ["illustration_1", "Illustration1"],
-    ["illustration_2", "Illustration2"]
-]
-
+avail_examples = Examples.list()    
+    
 # Default CCM parameter values
-default_parameters = {
-    "alpha": 1.0,
-    "beta": 0.0,
-    "gamma": 0.0,
-    "delta": 0.0}
+default_parameters = Parameters.defaults()
 
 def run_interactive():
     # Build example
     print("# Available examples:")
-    for i, [file_name, class_name] in enumerate(avail_examples):
+    for i, [file_name, class_name, reg] in enumerate(avail_examples):
         print(f"  {i}) {file_name}.{class_name}")
     example_id = int(input("  example index: "))
     if example_id not in range(len(avail_examples)):
@@ -87,7 +76,7 @@ def run_interactive():
             input("  preserve clusters [y/N]? ") == 'y'
         ),
         getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.generateProblemFile()
+    ccm_problem.launch()
 
 def run_batch(file_name: str):
     # Try to read YAML configuration file

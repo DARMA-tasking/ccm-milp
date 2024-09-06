@@ -34,6 +34,7 @@
 #
 
 import time
+import os
 import pulp
 
 from modules.configuration import Config
@@ -86,21 +87,21 @@ class CCM_MILP_Generator:
         preserve_clusters = self.config.preserve_clusters
 
         # χ: ranks <- tasks, I x K, binary variables in MILP
-        χ = pulp.LpVariable.dicts("CHI", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
+        χ = pulp.LpVariable.dicts("chi", ((i, k) for i in range(I) for k in range(K)), cat='Binary')
 
         # φ: ranks <- shared blocks, I x N, binary variables in MILP
-        φ = pulp.LpVariable.dicts("PHI", ((i, n) for i in range(I) for n in range(N)), cat='Binary')
+        φ = pulp.LpVariable.dicts("phi", ((i, n) for i in range(I) for n in range(N)), cat='Binary')
 
         ψ = dict()
         if is_FWMP:
             # ψ: ranks <- communications, I x I x M, binary variables in MILP
-            ψ = pulp.LpVariable.dicts("PSI", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
+            ψ = pulp.LpVariable.dicts("psi", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
 
-        # W_max: continuous variable in MILP for work defined by CCM model
-        W_max = pulp.LpVariable("W_max", lowBound=0, cat='Continuous')
+        # w_max: continuous variable in MILP for work defined by CCM model
+        w_max = pulp.LpVariable("w_max", lowBound=0, cat='Continuous')
 
         # Add the continuous variable to the problem
-        self.problem += W_max
+        self.problem += w_max
 
         start_time = time.perf_counter()
 
@@ -169,7 +170,7 @@ class CCM_MILP_Generator:
         if is_COMCP:
             for i in range(I):
                 # Add equation 20
-                self.problem += sum(self.task_loads[k] * χ[i, k] for k in range(K)) <= W_max
+                self.problem += sum(self.task_loads[k] * χ[i, k] for k in range(K)) <= w_max
 
         if is_FWMP:
             for i in range(I):
@@ -187,12 +188,12 @@ class CCM_MILP_Generator:
                 # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
                     beta * ψ[i, j, p] * self.task_communications[p][2]
-                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    for j in other_machines for p in range(len(self.task_communications))) <= w_max
 
                 # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
                 self.problem += alpha_term + gamma_term + delta_term + sum(
                     beta * ψ[j, i, p] * self.task_communications[p][2]
-                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                    for j in other_machines for p in range(len(self.task_communications))) <= w_max
 
             if preserve_clusters:
                 end_time = time.perf_counter()
@@ -212,7 +213,28 @@ class CCM_MILP_Generator:
     def writeMpsToFile(self, file_name : str):
         self.problem.writeMPS(file_name)
 
-    def generateProblemFile(self):
+    def launch(self):
         self.setupMILP()
-        self.writeLPToFile("problem.lp")
-        self.writeMpsToFile("problem.mps")
+        self.writeLPToFile(os.path.join(os.path.dirname(__file__),'..', 'problem.lp'))
+        self.writeMpsToFile(os.path.join(os.path.dirname(__file__),'..', 'problem.mps'))
+            
+    def launchAndSolve(self, solverName: str):
+        # Call launch         
+        self.launch()
+
+        # Check solver         
+        if (solverName not in pulp.listSolvers(onlyAvailable=True)):
+            print("*** Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
+            raise ValueError(f"Solver not found: {solverName}")
+        else: 
+            print("# Solver: ", solverName)
+
+
+        # Solver 
+        solver = pulp.getSolver(solver=solverName, keepFiles=True)
+
+        # Set solver
+        self.problem.setSolver(solver)
+
+        # Solve the problem 
+        self.problem.solve()

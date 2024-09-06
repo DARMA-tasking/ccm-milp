@@ -52,3 +52,59 @@ class Config:
         self.delta = delta
         self.use_mem_ub = use_mem_ub
         self.preserve_clusters = preserve_clusters
+
+class Examples:
+
+    @staticmethod
+    def list():
+        # Available CCM-MILP examples [filename, classname, regexpsForTests]
+        return [
+            # example_id: 0
+            ["small", "SmallProblem", [
+                'Optimal - objective value 87.50000000', 
+                'Objective:  OBJ = 87.5 (MINimum)'
+            ]],
+            
+            # example_id: 1
+            ["synthetic_blocks", "SyntheticBlocks", [
+                'Optimal - objective value 2.00000000', 
+                'Objective:  OBJ = 2 (MINimum)'
+            ]],
+            
+            # example_id: 2
+            ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster", [
+                'Optimal - objective value 5.50000000', 
+                'Objective:  OBJ = 5.5 (MINimum)'
+            ]],
+            
+            # example_id: 3
+            ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster", [
+                'Optimal - objective value 5.50000000', 
+                'Objective:  OBJ = 5.5 (MINimum)'
+            ]],
+            
+            # example_id: 4
+            ["illustration_1", "Illustration1", [
+                'Optimal - objective value 20.00000000', 
+                'Objective:  OBJ = 20 (MINimum)'
+            ]],
+            
+            # example_id: 5
+            ["illustration_2", "Illustration2", [
+                'Optimal - objective value 20.00000000', 
+                'Objective:  OBJ = 20 (MINimum)'
+            ]]
+        ]
+        
+class Parameters:
+    
+    @staticmethod
+    def defaults():
+        return {
+            "alpha": 1.0,
+            "beta": 0.0,
+            "gamma": 0.0,
+            "delta": 0.0
+        }
+        
+    
