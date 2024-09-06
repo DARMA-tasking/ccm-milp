@@ -117,7 +117,7 @@ def run_batch(file_name: str):
             c_bool.get("bounded_memory", False),
             c_bool.get("preserve_clusters", False)),
         getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.generateProblemFile()
+    ccm_problem.launch()
 
 def main(argv):
     # Parse possible command-line arguments
