@@ -276,7 +276,7 @@ def run_interactive():
         input_float("delta") if is_fwmp else default_parameters["delta"],
         input("  bounded memory [y/N]? ") == 'y',
         input("  preserve clusters [y/N]? ") == 'y']
-        
+
 def run_batch(file_name: str):
     # Try to read YAML configuration file
     parameters = {}
