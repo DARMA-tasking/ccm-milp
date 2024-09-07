@@ -255,12 +255,6 @@ class CCM_MILP_Generator:
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
         start_time = time.perf_counter()
 
-    def solveLP(self):
-        self.setupMILP()
-        self.problem.writeLP("problem.lp")
-        print("# Available LP solvers:", pulp.listSolvers(onlyAvailable=True))
-        self.problem.solve()
-
 def run_interactive():
     # Build example
     print("# Available examples:")
@@ -271,20 +265,18 @@ def run_interactive():
         raise ValueError(f"unvailable example index: {example_id}")
     print()
 
-    # Generate and solve linear problem
+    # Interactively get and return problem configuration
     print("# Model configuration:")
-    ccm_example = avail_examples[example_id]
-    return CCM_MILP_Generator(
-        Config(
-            (is_fwmp := (input("  FWMP [y/N]? ") == 'y')),
-            input_float("alpha") if is_fwmp else default_parameters["alpha"],
-            input_float("beta") if is_fwmp else default_parameters["beta"],
-            input_float("gamma") if is_fwmp else default_parameters["gamma"],
-            input_float("delta") if is_fwmp else default_parameters["delta"],
-            input("  bounded memory [y/N]? ") == 'y',
-            input("  preserve clusters [y/N]? ") == 'y'),
-        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-
+    return [
+        avail_examples[example_id],
+        (is_fwmp := (input("  FWMP [y/N]? ") == 'y')),
+        input_float("alpha") if is_fwmp else default_parameters["alpha"],
+        input_float("beta") if is_fwmp else default_parameters["beta"],
+        input_float("gamma") if is_fwmp else default_parameters["gamma"],
+        input_float("delta") if is_fwmp else default_parameters["delta"],
+        input("  bounded memory [y/N]? ") == 'y',
+        input("  preserve clusters [y/N]? ") == 'y']
+        
 def run_batch(file_name: str):
     # Try to read YAML configuration file
     parameters = {}
@@ -310,20 +302,19 @@ def run_batch(file_name: str):
             print ("*** Incorrect key:", k)
             sys.exit(1)
 
-    # Generate and solve linear problem
+    # Retrieve and return problem configuration
     if not ccm_example:
         print ("*** No CCM example was defined")
         sys.exit(1)
-    return CCM_MILP_Generator(
-        Config(
-            c_bool.get("is_fwmp", False),
-            c_float.get("alpha", default_parameters["alpha"]),
-            c_float.get("beta", default_parameters["beta"]),
-            c_float.get("gamma", default_parameters["gamma"]),
-            c_float.get("delta", default_parameters["delta"]),
-            c_bool.get("bounded_memory", False),
-            c_bool.get("preserve_clusters", False)),
-        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
+    return [
+        ccm_example,
+        c_bool.get("is_fwmp", False),
+        c_float.get("alpha", default_parameters["alpha"]),
+        c_float.get("beta", default_parameters["beta"]),
+        c_float.get("gamma", default_parameters["gamma"]),
+        c_float.get("delta", default_parameters["delta"]),
+        c_bool.get("bounded_memory", False),
+        c_bool.get("preserve_clusters", False)]
 
 def main(argv):
     # Parse possible command-line arguments
@@ -339,16 +330,22 @@ def main(argv):
         if o == '-c':
             file_name = a
 
-    # Run either interactively or in batch mode
+    # Retrieve parameters either interactively or in batch mode
     ccm_problem = None
     if file_name:
-        ccm_problem = run_batch(file_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl = run_batch(file_name)
     else:
-        ccm_problem = run_interactive()
+        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
+
+    # Build and save linear program
+    ccm_problem = CCM_MILP_Generator(
+        Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
+        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
+    ccm_problem.setupMILP()
+    ccm_problem.problem.writeLP("problem.lp")
 
     # Solve linear program
-    if ccm_problem:
-        ccm_problem.solveLP()
+    ccm_problem.problem.solve()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
