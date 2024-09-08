@@ -141,7 +141,7 @@ class CCM_MILP_Generator:
         # φ: ranks <- shared blocks, I x N, binary variables in MILP
         self.φ = pulp.LpVariable.dicts("φ", ((i, n) for i in range(I) for n in range(N)), cat='Binary')
 
-        # ψ: ranks <- communications I x I x M, binary variables in MILP 
+        # ψ: ranks <- communications I x I x M, binary variables in MILP
         self.ψ = dict()
         if is_FWMP:
             self.ψ = pulp.LpVariable.dicts("ψ", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
@@ -295,14 +295,14 @@ class CCM_MILP_Generator:
                 # Keep track of totals on rank
                 rank_totals[i] = (total_load, total_work, unhomed_blocks)
 
-            # Compute assignment array of tasks to ranks 
+            # Compute assignment array of tasks to ranks
             assignments = [-1] * self.K
             for i in range(self.I):
                 for k in range(self.K):
                     # Some solvers do not output a solution that is exactly 1 albeit binary
                     if pulp.value(self.χ[i, k]) > 0.5:
                         assignments[k] = i
-            
+
             print("\n# Detailed solution:")
             for key, value in solution.items():
                 if key == "W_max":
@@ -414,6 +414,6 @@ def main(argv):
     # Report solution to linear program when found
     ccm_problem.outputSolution()
     print()
-    
+
 if __name__ == "__main__":
     main(sys.argv[1:])
