@@ -119,16 +119,17 @@ class CCM_MILP_Generator:
         # instantiante LP minimization problem
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
-        # For convenience, make these local variables
+        # Number of ranks
         I = self.I
-        K = self.K
-        M = self.M
-        N = self.N
 
-        alpha = self.config.alpha
-        beta = self.config.beta
-        delta = self.config.delta
-        gamma = self.config.gamma
+        # Number of tasks
+        K = self.K
+
+        # Number of communications
+        M = self.M
+
+        # Number of shared blocks
+        N = self.N
 
         is_COMCP = self.config.is_COMCP
         is_FWMP = self.config.is_FWMP
@@ -146,10 +147,10 @@ class CCM_MILP_Generator:
             ψ = pulp.LpVariable.dicts("ψ", ((i, j, m) for i in range(I) for j in range(I) for m in range(M)), cat='Binary')
 
         # W_max: continuous variable in MILP for work defined by CCM model
-        W_max = pulp.LpVariable("W_max", lowBound=0, cat='Continuous')
+        self.W_max = pulp.LpVariable("W_max", lowBound=0, cat='Continuous')
 
         # Add the continuous variable to the problem
-        self.problem += W_max
+        self.problem += self.W_max
 
         # Add equation 14, constraining every task to a single rank:
         start_time = time.perf_counter()
@@ -214,7 +215,7 @@ class CCM_MILP_Generator:
         if is_COMCP:
             for i in range(I):
                 # Add equation 20
-                self.problem += sum(self.task_loads[k] * χ[i, k] for k in range(K)) <= W_max
+                self.problem += sum(self.task_loads[k] * χ[i, k] for k in range(K)) <= self.W_max
         elif is_FWMP:
             for i in range(I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
@@ -224,19 +225,24 @@ class CCM_MILP_Generator:
                 other_machines = [j for j in range(I) if j != i]
 
                 # Compute unchanging terms in equation 30
-                alpha_term = sum(self.task_loads[k] * χ[i, k] * alpha for k in range(K))
-                gamma_term = sum(gamma * ψ[i, i, p] * self.task_communications[p][2] for p in range(len(self.task_communications)))
-                delta_term = sum(self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]] * delta for p in range(len(remote_blocks)))
+                alpha_term = self.config.alpha * sum(
+                    self.task_loads[k] * χ[i, k] for k in range(K))
+                gamma_term = self.config.gamma * sum(
+                    ψ[i, i, p] * self.task_communications[p][2]
+                    for p in range(len(self.task_communications)))
+                delta_term = self.config.delta * sum(
+                    self.memory_blocks[remote_blocks[p]] * φ[i, remote_blocks[p]]
+                    for p in range(len(remote_blocks)))
 
                 # Add equation 30 for first transposition of beta term (σ(i,j) = {i,j})
-                self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[i, j, p] * self.task_communications[p][2]
-                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                self.problem += alpha_term + gamma_term + delta_term + self.config.beta * sum(
+                    ψ[i, j, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= self.W_max
 
                 # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
-                self.problem += alpha_term + gamma_term + delta_term + sum(
-                    beta * ψ[j, i, p] * self.task_communications[p][2]
-                    for j in other_machines for p in range(len(self.task_communications))) <= W_max
+                self.problem += alpha_term + gamma_term + delta_term + self.config.beta * sum(
+                    ψ[j, i, p] * self.task_communications[p][2]
+                    for j in other_machines for p in range(len(self.task_communications))) <= self.W_max
 
             if preserve_clusters:
                 end_time = time.perf_counter()
@@ -248,6 +254,72 @@ class CCM_MILP_Generator:
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
         start_time = time.perf_counter()
+
+    def outputInfoAfterSolve(self):
+        if self.problem.status == pulp.LpStatusOptimal:
+            solution = {'Makespan': pulp.value(self.W_max)}
+            machine_memory_blocks_assigned = [[] for i in range(self.N)]
+            total_unhomed_blocks = 0
+            for i in range(self.N):
+                unhomed_blocks = 0
+                delta_cost = 0
+                for k in range(self.M):
+                    if pulp.value(self.m[i, k]) == 1:
+                        machine_memory_blocks_assigned[i].append(k)
+                        if i != self.memory_block_home[k]:
+                            unhomed_blocks += 1
+                            delta_cost += self.memory_blocks[k] * self.delta
+                total_unhomed_blocks += unhomed_blocks
+                total_load = 0.0
+                total_work = delta_cost
+                for j in range(self.J):
+                    if pulp.value(self.x[i, j]) == 1:
+                        solution[f"Task {j} (index={self.task_indices[j]}) of load {self.task_times[j]} and memory blocks {machine_memory_blocks_assigned[i]} assigned to Machine {i}"] = True
+                        total_load += self.task_times[j]
+                        total_work += self.alpha * self.task_times[j]
+
+                comm_cost = 0.0
+
+                for j in range(self.N):
+                    for l in range(len(self.task_communications)):
+                        if pulp.value(self.c[i, j, l]) == 1.0 and pulp.value(self.x[i, self.task_communications[l][0]])  == 1.0 and pulp.value(self.x[j, self.task_communications[l][1]]) == 1.0:
+                            if i == j:
+                                comm_cost += self.gamma * self.task_communications[l][2]
+                            else:
+                                comm_cost += self.beta * self.task_communications[l][2]
+
+                total_work += comm_cost
+
+                print(f"Machine {i}: total load={total_load} total work={total_work} unhomed={unhomed_blocks}")
+
+            print("\nNon-zero entries in comm matrix that aren't zero'ed out by the work formula:")
+            for i in range(self.N):
+                for j in range(self.N):
+                    for l in range(len(self.task_communications)):
+                        if pulp.value(self.c[i, j, l]) == 1.0 and pulp.value(self.x[i, self.task_communications[l][0]])  == 1.0 and pulp.value(self.x[j, self.task_communications[l][1]]) == 1.0:
+                            print(f"c_({i},{j},{l})={pulp.value(self.c[i, j, l])} ({pulp.value(self.x[i, self.task_communications[l][0]])} {pulp.value(self.x[j, self.task_communications[l][1]])})")
+
+            permutation = [-1]*self.J
+            for i in range(self.N):
+                for j in range(self.J):
+                    # some of the solvers do not output a solution that's exactly 1,
+                    # even though this is binary!
+                    if pulp.value(self.x[i, j]) > 0.5:
+                        obj_id = self.task_rank_obj_id[j]
+                        permutation[j] = i
+
+            print("\nPermutation array for perl script to permute JSON files:")
+            print(f"my $permutation={permutation};\n")
+        else:
+            solution = {}
+
+        if solution:
+            print("Solution:")
+            for key, value in solution.items():
+                if value:
+                    print(key)
+        else:
+            print("No solution found")
 
 def run_interactive():
     # Build example
@@ -340,6 +412,6 @@ def main(argv):
 
     # Solve linear program
     ccm_problem.problem.solve()
-
+    ccm_problem.outputInfoAfterSolve()
 if __name__ == "__main__":
     main(sys.argv[1:])
