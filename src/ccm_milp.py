@@ -151,16 +151,15 @@ class CCM_MILP_Generator:
         # Add the continuous variable to the problem
         self.problem += W_max
 
-        start_time = time.perf_counter()
-
         # Add equation 14, constraining every task to a single rank:
+        start_time = time.perf_counter()
         for k in range(K):
             self.problem += sum(χ[i, k] for i in range(I)) == 1
-
         end_time = time.perf_counter()
-        print(f"Added basic constraint in {end_time - start_time:0.4f}s")
-        start_time = time.perf_counter()
+        print(f"Added basic constraints in {end_time - start_time:0.4f}s")
 
+        # Add equations 17 and 18 for shared block constraints
+        start_time = time.perf_counter()
         for i in range(I):
             for n in range(N):
                 for p in range(len(self.task_memory_block_mapping[n])):
@@ -169,18 +168,16 @@ class CCM_MILP_Generator:
 
                 # Add equation 18
                 self.problem += φ[i, n] <= sum(χ[i, self.task_memory_block_mapping[n][p]] for p in range(len(self.task_memory_block_mapping[n])))
-
         end_time = time.perf_counter()
-        print(f"Added shared blocks constraint in {end_time - start_time:0.4f}s")
-        start_time = time.perf_counter()
-
-        all_k_working_bytes_zero = True
-        for i in range(K):
-            if self.task_working_bytes[i] != 0:
-                all_k_working_bytes_zero = False
+        print(f"Added shared blocks constraints in {end_time - start_time:0.4f}s")
 
         # Include memory constraints when requested
         if self.config.use_mem_ub:
+            start_time = time.perf_counter()
+            all_k_working_bytes_zero = True
+            for i in range(K):
+                if self.task_working_bytes[i] != 0:
+                    all_k_working_bytes_zero = False
             for i in range(I):
                 if all_k_working_bytes_zero:
                     # Add equation 19
@@ -194,12 +191,12 @@ class CCM_MILP_Generator:
                             sum(self.task_footprint_bytes[l] * χ[i, l] for l in range(K)) +
                             self.task_working_bytes[k] * χ[i, k] +
                             sum(self.memory_blocks[n] * φ[i, n] for n in range(N))) <= (self.rank_mems[i] - self.rank_working_bytes[i])
-
             end_time = time.perf_counter()
             print(f"Added memory constraints in {end_time - start_time:0.4f}s")
-            start_time = time.perf_counter()
 
+        # Add communication constraints in full model case
         if is_FWMP:
+            start_time = time.perf_counter()
             for i in range(I):
                 for j in range(I):
                     for p in range(len(self.task_communications)):
@@ -209,18 +206,16 @@ class CCM_MILP_Generator:
                         self.problem += ψ[i, j, p] <= χ[j, self.task_communications[p][1]]
                         # Add equation 27
                         self.problem += ψ[i, j, p] >= χ[i, self.task_communications[p][0]] + χ[j, self.task_communications[p][1]] - 1
+            end_time = time.perf_counter()
+            print(f"Added communications constraints in {end_time - start_time:0.4f}s")
 
-        end_time = time.perf_counter()
-        if is_FWMP:
-            print(f"Added comm constraints in {end_time - start_time:0.4f}s")
+        # Add continuous constraints
         start_time = time.perf_counter()
-
         if is_COMCP:
             for i in range(I):
                 # Add equation 20
                 self.problem += sum(self.task_loads[k] * χ[i, k] for k in range(K)) <= W_max
-
-        if is_FWMP:
+        elif is_FWMP:
             for i in range(I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
                 remote_blocks = [n for n in range(N) if self.memory_block_home[n] != i]
@@ -250,7 +245,6 @@ class CCM_MILP_Generator:
                     self.problem += sum(φ[i, n] for i in range(I)) == 1
                 print(f"Added cluster preserving constraints in {end_time - start_time:0.4f}s")
                 start_time = time.perf_counter()
-
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
         start_time = time.perf_counter()
