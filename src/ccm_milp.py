@@ -33,28 +33,27 @@
 # Questions? Contact darma@sandia.gov
 #
 
-import sys
 import getopt
 import importlib
 import os
+import sys
 import yaml
 
-from modules.configuration import Config, Examples, Parameters
-from modules.tools import Tools
-from modules.generator import CCM_MILP_Generator
+from CcmMilp.Configuration import Config, Examples, Parameters
+from CcmMilp.Generator import CcmMilpGenerator
+from CcmMilp.Tools import Tools
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../examples"))
 
-# Available CCM-MILP examples
-avail_examples = Examples.list()
-    
-# Default CCM parameter values
-default_parameters = Parameters.defaults()
+avail_examples = Examples.list() # Available CCM-MILP examples
+default_parameters = Parameters.defaults() # Default CCM parameter values
 
-def run_interactive(solverName: str):
+def run_interactive(solver_name: str):
+    """Run with interactive selection of example"""
+
     # Build example
     print("# Available examples:")
-    for i, [file_name, class_name, reg] in enumerate(avail_examples):
+    for i, [file_name, class_name, _] in enumerate(avail_examples):
         print(f"  {i}) {file_name}.{class_name}")
     example_id = int(input("  example index: "))
     if example_id not in range(len(avail_examples)):
@@ -64,21 +63,23 @@ def run_interactive(solverName: str):
     # Generate and solve linear problem
     print("# Model configuration:")
     ccm_example = avail_examples[example_id]
-    ccm_problem = CCM_MILP_Generator(
+    ccm_problem = CcmMilpGenerator(
         Config(
-            (is_fwmp := (input("  FWMP [y/N]? ") == 'y')),
-            Tools.inputFloat("alpha") if is_fwmp else default_parameters["alpha"],
-            Tools.inputFloat("beta") if is_fwmp else default_parameters["beta"],
-            Tools.inputFloat("gamma") if is_fwmp else default_parameters["gamma"],
-            Tools.inputFloat("delta") if is_fwmp else default_parameters["delta"],
+            is_fwmp := (input("  FWMP [y/N]? ") == 'y'),
+            Tools.input_float("alpha") if is_fwmp else default_parameters["alpha"],
+            Tools.input_float("beta") if is_fwmp else default_parameters["beta"],
+            Tools.input_float("gamma") if is_fwmp else default_parameters["gamma"],
+            Tools.input_float("delta") if is_fwmp else default_parameters["delta"],
 
             input("  bounded memory [y/N]? ") == 'y',
             input("  preserve clusters [y/N]? ") == 'y'
         ),
         getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.launchAndSolve(solverName)
-    
-def run_batch(file_name: str, solverName: str):
+    ccm_problem.generate_problem_and_solve(solver_name)
+
+def run_batch(file_name: str, solver_name: str):
+    """Run with a config file"""
+
     # Try to read YAML configuration file
     parameters = {}
     try:
@@ -107,7 +108,7 @@ def run_batch(file_name: str, solverName: str):
     if not ccm_example:
         print ("*** No CCM example was defined")
         sys.exit(1)
-    ccm_problem = CCM_MILP_Generator(
+    ccm_problem = CcmMilpGenerator(
         Config(
             c_bool.get("is_fwmp", False),
             c_float.get("alpha", default_parameters["alpha"]),
@@ -117,9 +118,11 @@ def run_batch(file_name: str, solverName: str):
             c_bool.get("bounded_memory", False),
             c_bool.get("preserve_clusters", False)),
         getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.launchAndSolve(solverName)
+    ccm_problem.generate_problem_and_solve(solver_name)
 
 def main(argv):
+    """Run with interactive selection of example"""
+
     # Parse possible command-line arguments
     try:
         opts, _ = getopt.getopt(argv,"cs:")
@@ -130,18 +133,18 @@ def main(argv):
 
     # Default execution mode is interactive
     file_name = None
-    solverName = 'PULP_CBC_CMD'
+    solver_name = 'PULP_CBC_CMD'
     for o, a in opts:
         if o == '-c':
             file_name = a
         if o == '-s':
-            solverName = a
+            solver_name = a
 
     # Run either interactively or in batch mode
     if file_name:
-        run_batch(file_name, solverName)
+        run_batch(file_name, solver_name)
     else:
-        run_interactive(solverName)
+        run_interactive(solver_name)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

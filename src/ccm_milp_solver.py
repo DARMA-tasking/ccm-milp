@@ -33,49 +33,46 @@
 # Questions? Contact darma@sandia.gov
 #
 
-import sys
 import getopt
+import os
+import sys
 import pulp
-import os;
 
-def run_batch(fileName: str, solverName: str):
-    # Init        
-    error = False 
-    
-    # Check problem file        
-    if (os.path.isfile(fileName) == False):
-        error = True 
-        print("*** File not found: ", fileName)
+from CcmMilp.Generator import CcmMilpGenerator
+
+def run_batch(file_name: str, solver_name: str):
+    """Run with a config file"""
+
+    # Init
+    error = False
+
+    # Check problem file
+    if os.path.isfile(file_name) is False:
+        error = True
+        print("*** File not found: ", file_name)
     else:
-        print("# FileName: ", fileName)
+        print("# FileName: ", file_name)
 
-    # Check solver         
-    if (solverName not in pulp.listSolvers(onlyAvailable=True)):
-        error = True 
-        print("*** Solver not found: ", solverName)
+    # Check solver
+    if solver_name not in pulp.listSolvers(onlyAvailable=True):
+        error = True
+        print("*** Solver not found: ", solver_name)
         print("*** Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
-    else: 
-        print("# Solver: ", solverName)
-    
+    else:
+        print("# Solver: ", solver_name)
+
     # Has error
-    if (error == True):
+    if error is True:
         print("")
-        exit(1);
-    
+        sys.exit(1)
+
     # Load problem file
-    _, model = pulp.LpProblem.fromMPS(fileName)
-        
-    # Solver 
-    solver = pulp.getSolver(solver=solverName, keepFiles=True)
+    _, problem = pulp.LpProblem.fromMPS(file_name)
 
-    # Set solver
-    model.setSolver(solver)
-
-    # Solve the problem 
-    model.solve()
+    CcmMilpGenerator.solve_problem(problem, solver_name)
 
 def main(argv):
-    
+    """Main"""
     # Parse possible command-line arguments
     try:
         opts, _ = getopt.getopt(argv,"ms:")
@@ -84,21 +81,21 @@ def main(argv):
         sys.exit(1)
 
     # Default execution mode is interactive
-    fileName = os.path.join(os.path.dirname(__file__), 'problem.mps')
-        
+    file_name = os.path.join(os.path.dirname(__file__), 'problem.mps')
+
     # Default solver value ['GLPK_CMD', 'PULP_CBC_CMD', 'COIN_CMD']
-    solverName = 'COIN_CMD'
+    solver_name = 'COIN_CMD'
 
     # Overided by options
     for o, a in opts:
         if o == '-m':
-            fileName = a
+            file_name = a
         if o == '-s':
-            solverName = a
+            solver_name = a
 
     # Run either interactively or in batch mode
-    if fileName:
-        run_batch(fileName, solverName)
+    if file_name:
+        run_batch(file_name, solver_name)
     else:
         sys.exit(1)
 

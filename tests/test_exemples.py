@@ -1,13 +1,12 @@
+import subprocess
 import os
 import unittest
 import pulp
-import subprocess
-import shutil
 
-from src.modules.configuration import Examples
+from src.CcmMilp.Configuration import Examples
 
-"""Class to run tests on exemples"""
 class TestExemples(unittest.TestCase):
+    """Class to run tests on exemples"""
 
     def setUp(self):
         return
@@ -16,89 +15,91 @@ class TestExemples(unittest.TestCase):
         return
 
     def test_all_exemples(self):
+        """Test all exemples"""
         # Get src dir
-        rootDir = os.path.join(os.path.dirname(__file__), '..')
-        srcDir = os.path.join(rootDir, 'src')
-        
+        root_dir = os.path.join(os.path.dirname(__file__), '..')
+        src_dir = os.path.join(root_dir, 'src')
+
         # Available CCM-MILP examples
         avail_examples = Examples.list()
-    
-        for i, [moduleName, className, regexpTest] in enumerate(avail_examples):
+
+        for i, [module_name, class_name, regexp_test] in enumerate(avail_examples):
 
             print()
             print('-----------------------------------------')
-            print(f'Exemple : #{i}: {moduleName}.{className}')
+            print(f'Exemple : #{i}: {module_name}.{class_name}')
             print('-----------------------------------------')
-    
+
             print('  Generate problem')
             print('  ----------------')
             print('')
-            
+
             # run ccm_milp_problem for exemple 1
             config_file = os.path.join(os.path.dirname(__file__), 'config', f'example_{i}.yaml')
             self.assertTrue(os.path.isfile(config_file), f'File: {config_file} does not exist!')
-            
-            subprocess.run(['python', os.path.join(srcDir, 'ccm_milp_problem.py'), '-c', config_file], check=True)
-            
+
+            subprocess.run(['python', os.path.join(src_dir, 'ccm_milp_problem.py'), '-c', config_file], check=True)
+
             # # Check problem file was generated
-            lpFile = os.path.join(srcDir, 'problem.lp')
-            self.assertTrue(os.path.isfile(lpFile), f'File: {lpFile} does not exist!')
-            mpsFile = os.path.join(srcDir, 'problem.mps')
-            self.assertTrue(os.path.isfile(mpsFile), f'File: {mpsFile} does not exist!')
-            
+            lp_file = os.path.join(src_dir, 'problem.lp')
+            self.assertTrue(os.path.isfile(lp_file), f'File: {lp_file} does not exist!')
+            mps_file = os.path.join(src_dir, 'problem.mps')
+            self.assertTrue(os.path.isfile(mps_file), f'File: {mps_file} does not exist!')
+
             print('')
             print('  Solve problem')
             print('  ----------------')
-            
+
             # For each solver available
-            for solverName in pulp.listSolvers(onlyAvailable=True):
+            for solver_name in pulp.listSolvers(onlyAvailable=True):
                 print('')
-                print(f'    {solverName}')
+                print(f'    {solver_name}')
                 print('    ----------------')
-                
-                # Run the solver on the example problem 
-                subprocess.run(['python', os.path.join(srcDir, 'ccm_milp_solver.py'), '-s', solverName], check=True)
-        
+
+                # Run the solver on the example problem
+                subprocess.run(['python', os.path.join(src_dir, 'ccm_milp_solver.py'), '-s', solver_name], check=True)
+
                 # clear useless generated files
-                mpsSolFile = os.path.join(rootDir, 'CCM_MILP-pulp.mps')
-                lpSolFile = os.path.join(rootDir, 'CCM_MILP-pulp.lp')
-                if (os.path.isfile(mpsSolFile)): os.remove(mpsSolFile)
-                if (os.path.isfile(lpSolFile)): os.remove(lpSolFile)
-        
+                mps_sol_file = os.path.join(root_dir, 'CCM_MILP-pulp.mps')
+                lp_sol_file = os.path.join(root_dir, 'CCM_MILP-pulp.lp')
+                if os.path.isfile(mps_sol_file):
+                    os.remove(mps_sol_file)
+                if os.path.isfile(lp_sol_file):
+                    os.remove(lp_sol_file)
+
                 # Check sol file
-                solFile = os.path.join(rootDir, 'CCM_MILP-pulp.sol')
-                self.assertTrue(os.path.isfile(solFile), f'File: {solFile} does not exist!')
-                
-                # solFile2 = os.path.join(rootDir,'sol', moduleName, solverName, 'CCM_MILP-pulp.sol')
-                # os.makedirs(os.path.dirname(solFile2))
-                # shutil.copy(solFile, solFile2)
-                         
+                sol_file = os.path.join(root_dir, 'CCM_MILP-pulp.sol')
+                self.assertTrue(os.path.isfile(sol_file), f'File: {sol_file} does not exist!')
+
+                # sol_file2 = os.path.join(root_dir,'sol', module_name, solver_name, 'CCM_MILP-pulp.sol')
+                # os.makedirs(os.path.dirname(sol_file2))
+                # shutil.copy(sol_file, sol_file2)
+
                 # Readd the sol file content
                 output_str = ''
-                with open(solFile, 'r', encoding="utf-8") as solContent:
-                     output_str = solContent.read()
-                
+                with open(sol_file, 'r', encoding="utf-8") as sol_content:
+                    output_str = sol_content.read()
+
                 print(output_str)
-                     
+
                 # Check sol file content
                 found = False
-                for reg in regexpTest:
+                for reg in regexp_test:
                     if reg in output_str:
                         print(f"Found {reg}")
                         found = True
 
                 # No Regexp found
-                if (found == False):
-                    for reg in regexpTest:
-                        self.fail(f"Regex: not found in .sol.")
+                if found is False:
+                    for reg in regexp_test:
+                        self.fail('Regex: not found in .sol')
 
-    
                 # clear .sol file
-                os.remove(solFile)
-            
+                os.remove(sol_file)
+
             # Clear created files
-            os.remove(lpFile)
-            os.remove(mpsFile)
+            os.remove(lp_file)
+            os.remove(mps_file)
 
 if __name__ == '__main__':
     unittest.main()
