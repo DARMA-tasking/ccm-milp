@@ -37,7 +37,7 @@ class Config:
     """Config object"""
     def __init__(
         self,
-        is_fwmp: bool,
+        is_fmwp: bool,
         alpha: float,
         beta: float,
         gamma: float,
@@ -45,8 +45,14 @@ class Config:
         use_mem_ub:bool,
         preserve_clusters:bool
     ):
-        self.is_fwmp = is_fwmp
-        self.is_comcp = not is_fwmp
+        print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
+        print(f"  alpha = {alpha}")
+        print(f"  beta = {beta}")
+        print(f"  gamma = {gamma}")
+        print(f"  delta = {delta}")
+        print(f"  with{'' if use_mem_ub else 'out'} rank memory upper bound")
+        self.is_fmwp = is_fmwp
+        self.is_comcp = not is_fmwp
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma

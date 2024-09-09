@@ -33,7 +33,7 @@
 # Questions? Contact darma@sandia.gov
 #
 
-import getopt
+import argparse
 import importlib
 import os
 import sys
@@ -48,7 +48,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../examples"))
 avail_examples = Examples.list() # Available CCM-MILP examples
 default_parameters = Parameters.defaults() # Default CCM parameter values
 
-def run_interactive(solver_name: str):
+def run_interactive():
     """Run with interactive selection of example"""
 
     # Build example
@@ -58,26 +58,22 @@ def run_interactive(solver_name: str):
     example_id = int(input("  example index: "))
     if example_id not in range(len(avail_examples)):
         raise ValueError(f"unvailable example index: {example_id}")
-    print()
 
-    # Generate and solve linear problem
-    print("# Model configuration:")
-    ccm_example = avail_examples[example_id]
-    ccm_problem = CcmMilpGenerator(
-        Config(
-            is_fwmp := (input("  FWMP [y/N]? ") == 'y'),
-            Tools.input_float("alpha") if is_fwmp else default_parameters["alpha"],
-            Tools.input_float("beta") if is_fwmp else default_parameters["beta"],
-            Tools.input_float("gamma") if is_fwmp else default_parameters["gamma"],
-            Tools.input_float("delta") if is_fwmp else default_parameters["delta"],
 
-            input("  bounded memory [y/N]? ") == 'y',
-            input("  preserve clusters [y/N]? ") == 'y'
-        ),
-        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.generate_problem_and_solve(solver_name)
+    # Interactively get and return problem configuration
+    print("\n# Model configuration:")
+    return [
+        avail_examples[example_id],
+        is_fwmp := (input("  FWMP [y/N]? ") == 'y'),
+        Tools.input_float("alpha") if is_fwmp else default_parameters["alpha"],
+        Tools.input_float("beta") if is_fwmp else default_parameters["beta"],
+        Tools.input_float("gamma") if is_fwmp else default_parameters["gamma"],
+        Tools.input_float("delta") if is_fwmp else default_parameters["delta"],
+        input("  bounded memory [y/N]? ") == 'y',
+        input("  preserve clusters [y/N]? ") == 'y'
+    ]
 
-def run_batch(file_name: str, solver_name: str):
+def run_batch(file_name: str):
     """Run with a config file"""
 
     # Try to read YAML configuration file
@@ -104,47 +100,55 @@ def run_batch(file_name: str, solver_name: str):
             print ("*** Incorrect key:", k)
             sys.exit(1)
 
-    # Generate and solve linear problem
+    # Retrieve and return problem configuration
     if not ccm_example:
         print ("*** No CCM example was defined")
         sys.exit(1)
-    ccm_problem = CcmMilpGenerator(
-        Config(
-            c_bool.get("is_fwmp", False),
-            c_float.get("alpha", default_parameters["alpha"]),
-            c_float.get("beta", default_parameters["beta"]),
-            c_float.get("gamma", default_parameters["gamma"]),
-            c_float.get("delta", default_parameters["delta"]),
-            c_bool.get("bounded_memory", False),
-            c_bool.get("preserve_clusters", False)),
-        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])())
-    ccm_problem.generate_problem_and_solve(solver_name)
 
-def main(argv):
+    return [
+        ccm_example,
+        c_bool.get("is_fwmp", False),
+        c_float.get("alpha", default_parameters["alpha"]),
+        c_float.get("beta", default_parameters["beta"]),
+        c_float.get("gamma", default_parameters["gamma"]),
+        c_float.get("delta", default_parameters["delta"]),
+        c_bool.get("bounded_memory", False),
+        c_bool.get("preserve_clusters", False)
+    ]
+
+def main():
     """Run with interactive selection of example"""
 
-    # Parse possible command-line arguments
-    try:
-        opts, _ = getopt.getopt(argv,"cs:")
-    except getopt.GetoptError:
-        print ("*** Usage:ccm_milp.py [-c <YAML configuration file>]")
-        sys.exit(1)
+    # Manage options
+    parser = argparse.ArgumentParser(
+        prog='CCM-MILP',
+        description='Generate & solve a problem'
+    )
+    parser.add_argument('-c', '--config', help='The config.yaml file', default=None)
+    parser.add_argument('-s', '--solver', help="The problem solver", default='PULP_CBC_CMD')
 
+    # Get options
+    args = parser.parse_args()
+    file_name = args.config
+    solver_name = args.solver
 
-    # Default execution mode is interactive
-    file_name = None
-    solver_name = 'PULP_CBC_CMD'
-    for o, a in opts:
-        if o == '-c':
-            file_name = a
-        if o == '-s':
-            solver_name = a
-
-    # Run either interactively or in batch mode
+    # Retrieve parameters either interactively or in batch mode
     if file_name:
-        run_batch(file_name, solver_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl = run_batch(file_name)
     else:
-        run_interactive(solver_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
+
+    # Build and save linear program
+    ccm_milp_generator = CcmMilpGenerator(
+        Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
+        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])()
+    )
+
+    ccm_milp_generator.generate_problem_and_solve(solver_name)
+
+    # Report solution to linear program when found
+    ccm_milp_generator.output_solution()
+    print()
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

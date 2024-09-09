@@ -33,7 +33,7 @@
 # Questions? Contact darma@sandia.gov
 #
 
-import getopt
+import argparse
 import os
 import sys
 import pulp
@@ -71,33 +71,29 @@ def run_batch(file_name: str, solver_name: str):
 
     CcmMilpGenerator.solve_problem(problem, solver_name)
 
-def main(argv):
+def main():
     """Main"""
-    # Parse possible command-line arguments
-    try:
-        opts, _ = getopt.getopt(argv,"ms:")
-    except getopt.GetoptError:
-        print ("*** Usage: ccm_milp_solver.py [-m <Problem File>] [-s <Solver Name>]")
-        sys.exit(1)
+    # Init
+    default_mps = os.path.join(os.path.dirname(__file__), 'problem.mps')
 
-    # Default execution mode is interactive
-    file_name = os.path.join(os.path.dirname(__file__), 'problem.mps')
+    # Manage options
+    parser = argparse.ArgumentParser(
+        prog='CCM-MILP Solver',
+        description='Generate & solve a problem'
+    )
+    parser.add_argument('-p', '--problem', help='The problem.mps file', default=default_mps)
+    parser.add_argument('-s', '--solver', help="The problem solver", default='PULP_CBC_CMD')
 
-    # Default solver value ['GLPK_CMD', 'PULP_CBC_CMD', 'COIN_CMD']
-    solver_name = 'COIN_CMD'
+    # Get options
+    args = parser.parse_args()
+    file_name = args.problem
+    solver_name = args.solver
 
-    # Overided by options
-    for o, a in opts:
-        if o == '-m':
-            file_name = a
-        if o == '-s':
-            solver_name = a
-
-    # Run either interactively or in batch mode
+    # Retrieve parameters in batch mode
     if file_name:
         run_batch(file_name, solver_name)
     else:
         sys.exit(1)
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
