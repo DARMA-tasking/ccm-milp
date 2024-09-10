@@ -180,8 +180,7 @@ class CcmMilpGenerator:
         self_n = self.n
 
         is_comcp = self.config.is_comcp
-        is_fmwp = self.config.is_fmwp
-        preserve_clusters = self.config.preserve_clusters
+        is_fmwp = self.config.is_fmwp        
 
         # chi: ranks <- tasks, self_i x self_k, binary variables in MILP
         self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self_i) for k in range(self_k)), cat='Binary')
@@ -303,18 +302,17 @@ class CcmMilpGenerator:
                 self.problem += alpha_term + gamma_term + delta_term + self.config.beta * sum(
                     self.psi[j, i, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
-
-            if preserve_clusters:
-                end_time = time.perf_counter()
-                # Add cluster-preserving constraints
-                for n in range(self_n):
-                    self.problem += sum(self.phi[i, n] for i in range(self_i)) == 1
-                print(f"Added cluster preserving constraints in {end_time - start_time:0.4f}s")
-                start_time = time.perf_counter()
         end_time = time.perf_counter()
         print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
-        start_time = time.perf_counter()
 
+        # Add cluster-preserving constraints when requested
+        if self.config.preserve_clusters:
+            start_time = time.perf_counter()
+            for n in range(self_n):
+                self.problem += sum(self.phi[i, n] for i in range(self_i)) == 1
+            end_time = time.perf_counter()
+            print(f"Added cluster-preserving constraints in {end_time - start_time:0.4f}s")
+            
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
         self.problem.writeLP(file_name)

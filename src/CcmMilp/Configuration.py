@@ -51,6 +51,8 @@ class Config:
         print(f"  gamma = {gamma}")
         print(f"  delta = {delta}")
         print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
+        if preserve_clusters:
+            print("  while preserving block clusters")
         self.is_fmwp = is_fmwp
         self.is_comcp = not is_fmwp
         self.alpha = alpha
