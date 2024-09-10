@@ -46,7 +46,7 @@ class TestExamples(unittest.TestCase):
                     print('')
 
                     subprocess.run([
-                        'python', 
+                        'python',
                         os.path.join(src_dir, 'ccm_milp_problem.py'),
                         '-c',
                         config_file

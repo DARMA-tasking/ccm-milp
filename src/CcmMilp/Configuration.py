@@ -93,7 +93,7 @@ class Examples:
                 test = True,
                 test_configs = [
                     {
-                        'file': '1-load-only.yaml', 
+                        'file': '1-load-only.yaml',
                         'regexp': [
                             'Optimal - objective value 2.00000000',
                             'Objective:  OBJ = 2 (MINimum)'
