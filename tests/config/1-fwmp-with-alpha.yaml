@@ -1,5 +1,5 @@
 example_id: 1
-is_fwmp: False
+is_fwmp: True
 alpha: 1
 beta: 0
 gamma: 0

@@ -123,8 +123,8 @@ class Examples:
                     {
                         'file': '1-fwmp-with-alpha-beta.yaml',
                         'regexp': [
-                            'Optimal - objective value 2.00000000',
-                            'Objective:  OBJ = 2 (MINimum)'
+                            'Optimal - objective value 4.00000000',
+                            'Objective:  OBJ = 4 (MINimum)'
                         ]
                     }
                 ]
