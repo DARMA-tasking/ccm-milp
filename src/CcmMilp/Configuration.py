@@ -104,8 +104,8 @@ class Examples:
                     {
                         'file': '1-load-only-and-cluster.yaml',
                         'regexp': [
-                            'Optimal - objective value 2.00000000',
-                            'Objective:  OBJ = 2 (MINimum)'
+                            'Optimal - objective value 2.50000000',
+                            'Objective:  OBJ = 2.5 (MINimum)'
                         ]
                     },
                     {
