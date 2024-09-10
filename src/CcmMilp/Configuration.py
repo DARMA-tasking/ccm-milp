@@ -135,7 +135,14 @@ class Examples:
                             'Optimal - objective value 0.00000000',
                             'Objective:  OBJ = 0 (MINimum)'
                         ]
-                    }
+                    },
+                    {
+                        'file': '1-off-node-communication-only.yaml',
+                        'regexp': [
+                            'Optimal - objective value 0.00000000',
+                            'Objective:  OBJ = 0 (MINimum)'
+                        ]
+                    },
                 ]
             ),
             ExampleConfig(
