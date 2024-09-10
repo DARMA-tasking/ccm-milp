@@ -128,6 +128,13 @@ class Examples:
                             'Optimal - objective value 4.00000000',
                             'Objective:  OBJ = 4 (MINimum)'
                         ]
+                    },
+                    {
+                        'file': '1-null-case.yaml',
+                        'regexp': [
+                            'Optimal - objective value 0.00000000',
+                            'Objective:  OBJ = 0 (MINimum)'
+                        ]
                     }
                 ]
             ),
