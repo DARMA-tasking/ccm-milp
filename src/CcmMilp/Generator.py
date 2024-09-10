@@ -180,7 +180,7 @@ class CcmMilpGenerator:
         self_n = self.n
 
         is_comcp = self.config.is_comcp
-        is_fmwp = self.config.is_fmwp        
+        is_fmwp = self.config.is_fmwp
 
         # chi: ranks <- tasks, self_i x self_k, binary variables in MILP
         self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self_i) for k in range(self_k)), cat='Binary')
@@ -312,7 +312,7 @@ class CcmMilpGenerator:
                 self.problem += sum(self.phi[i, n] for i in range(self_i)) == 1
             end_time = time.perf_counter()
             print(f"Added cluster-preserving constraints in {end_time - start_time:0.4f}s")
-            
+
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
         self.problem.writeLP(file_name)
