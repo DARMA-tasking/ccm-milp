@@ -42,7 +42,7 @@ class Config:
         beta: float,
         gamma: float,
         delta: float,
-        use_mem_ub:bool,
+        bounded_memory:bool,
         preserve_clusters:bool
     ):
         print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
@@ -50,58 +50,101 @@ class Config:
         print(f"  beta = {beta}")
         print(f"  gamma = {gamma}")
         print(f"  delta = {delta}")
-        print(f"  with{'' if use_mem_ub else 'out'} rank memory upper bound")
+        print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
         self.is_fmwp = is_fmwp
         self.is_comcp = not is_fmwp
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
-        self.use_mem_ub = use_mem_ub
+        self.bounded_memory = bounded_memory
         self.preserve_clusters = preserve_clusters
+
+class ExampleConfig:
+    """Examples Configs"""
+    def __init__(
+        self,
+        filename: str = None,
+        classname: str = None,
+        test: bool = False,
+        test_configs: any = None,
+        test_regexp: dict = None
+    ):
+        self.filename = filename
+        self.classname = classname
+        self.test = test
+        self.test_configs = test_configs
+        self.test_regexp = test_regexp
 
 class Examples:
     """Examples"""
     @staticmethod
     def list():
         """Examples list"""
-        # Available CCM-MILP examples [filename, classname, RegexpTest[PULP_CBC_CMD & COIN_CMD, GLPK_CMD]]
+        # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
         return [
-            # example_id: 0
-            ["small", "SmallProblem", [
-                'Optimal - objective value 87.50000000',
-                'Objective:  OBJ = 87.5 (MINimum)'
-            ]],
-
-            # example_id: 1
-            ["synthetic_blocks", "SyntheticBlocks", [
-                'Optimal - objective value 2.00000000',
-                'Objective:  OBJ = 2 (MINimum)'
-            ]],
-
-            # example_id: 2
-            ["ccm_example_no_sub_cluster", "CCMExampleNoSubCluster", [
-                'Optimal - objective value 5.50000000',
-                'Objective:  OBJ = 5.5 (MINimum)'
-            ]],
-
-            # example_id: 3
-            ["ccm_example_with_sub_cluster", "CCMExampleWithSubCluster", [
-                'Optimal - objective value 5.50000000',
-                'Objective:  OBJ = 5.5 (MINimum)'
-            ]],
-
-            # example_id: 4
-            ["illustration_1", "Illustration1", [
-                'Optimal - objective value 20.00000000',
-                'Objective:  OBJ = 20 (MINimum)'
-            ]],
-
-            # example_id: 5
-            ["illustration_2", "Illustration2", [
-                'Optimal - objective value 20.00000000',
-                'Objective:  OBJ = 20 (MINimum)'
-            ]]
+            ExampleConfig(
+                filename = 'small',
+                classname = 'SmallProblem'
+            ),
+            ExampleConfig(
+                filename = 'synthetic_blocks',
+                classname = 'SyntheticBlocks',
+                test = True,
+                test_configs = [
+                    {
+                        'file': '1-load-only.yaml', 
+                        'regexp': [
+                            'Optimal - objective value 2.00000000',
+                            'Objective:  OBJ = 2 (MINimum)'
+                        ]
+                    },
+                    {
+                        'file': '1-load-only-and-cluster.yaml',
+                        'regexp': [
+                            'Optimal - objective value 2.00000000',
+                            'Objective:  OBJ = 2 (MINimum)'
+                        ]
+                    },
+                    {
+                        'file': '1-load-only-and-memory-bound.yaml',
+                        'regexp': [
+                            'Optimal - objective value 2.00000000',
+                            'Objective:  OBJ = 2 (MINimum)'
+                        ]
+                    },
+                    {
+                        'file': '1-fwmp-with-alpha.yaml',
+                        'regexp': [
+                            'Optimal - objective value 2.00000000',
+                            'Objective:  OBJ = 2 (MINimum)'
+                        ]
+                    },
+                    {
+                        'file': '1-fwmp-with-alpha-beta.yaml',
+                        'regexp': [
+                            'Optimal - objective value 2.00000000',
+                            'Objective:  OBJ = 2 (MINimum)'
+                        ]
+                    }
+                ]
+            ),
+            ExampleConfig(
+                filename = 'ccm_example_no_sub_cluster',
+                classname = 'CCMExampleNoSubCluster'
+            ),
+            ExampleConfig(
+                filename = 'ccm_example_with_sub_cluster',
+                classname = 'CCMExampleWithSubCluster'
+            ),
+            ExampleConfig(
+                filename = 'illustration_1',
+                classname = 'Illustration1'
+            ),
+            ExampleConfig(
+                filename = 'Illustration2',
+                classname = '5'
+            )
         ]
 
 class Parameters:

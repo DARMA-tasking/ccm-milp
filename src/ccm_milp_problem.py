@@ -53,8 +53,9 @@ def run_interactive():
 
     # Build example
     print("# Available examples:")
-    for i, [file_name, class_name, _] in enumerate(avail_examples):
-        print(f"  {i}) {file_name}.{class_name}")
+    for example_id, example_config in enumerate(avail_examples):
+        print(f"  {example_id}) {example_config.filename}.{example_config.classname}")
+
     example_id = int(input("  example index: "))
     if example_id not in range(len(avail_examples)):
         raise ValueError(f"unvailable example index: {example_id}")
@@ -139,7 +140,7 @@ def main():
     # Build and save linear program
     ccm_milp_generator = CcmMilpGenerator(
         Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module(ccm_example[0]), ccm_example[1])()
+        getattr(importlib.import_module(ccm_example.filename), ccm_example.classname)()
     )
 
     # Generate the problem and it's files

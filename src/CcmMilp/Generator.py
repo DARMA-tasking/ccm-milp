@@ -228,7 +228,7 @@ class CcmMilpGenerator:
         print(f"Added shared blocks constraints in {end_time - start_time:0.4f}s")
 
         # Include memory constraints when requested
-        if self.config.use_mem_ub:
+        if self.config.bounded_memory:
             start_time = time.perf_counter()
             all_k_working_bytes_zero = True
             for i in range(self_k):

@@ -1,0 +1,8 @@
+example_id: 1
+is_fwmp: False
+alpha: 1
+beta: 1
+gamma: 0
+delta: 0
+bounded_memory: False
+preserve_clusters: False
