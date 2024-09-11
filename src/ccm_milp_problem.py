@@ -33,18 +33,22 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import os
 import sys
 import argparse
 import importlib
-import os
 import yaml
 
-from CcmMilp.Configuration import Config, Examples, Parameters
-from CcmMilp.Generator import CcmMilpGenerator
-from CcmMilp.Tools import Tools
+# Add global path
+sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../..')))
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../examples"))
+# Import classes
+from ccm_milp.configuration import Config, Parameters
+from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.tools import Tools
+from examples.configuration import Examples
 
+# Global variables
 avail_examples = Examples.list() # Available CCM-MILP examples
 default_parameters = Parameters.defaults() # Default CCM parameter values
 
@@ -140,7 +144,7 @@ def main():
     # Build and save linear program
     ccm_milp_generator = CcmMilpGenerator(
         Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module(ccm_example.filename), ccm_example.classname)()
+        getattr(importlib.import_module('examples.cases.' + ccm_example.filename), ccm_example.classname)()
     )
 
     # Generate the problem and it's files

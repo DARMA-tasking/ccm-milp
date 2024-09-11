@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -33,17 +33,22 @@
 # Questions? Contact darma@sandia.gov
 #
 
-class Tools:
-    """ Tools"""
+import sys
+import importlib
+import os
 
-    @staticmethod
-    def input_float(input_name: str, indent="  ", default=0.0):
-        """ Interactively retrieve input with float type. """
-        value = input(f"{indent}value of {input_name} [{default}]? ")
-        if not value:
-            return default
-        try:
-            value = float(value)
-        except Exception as exc:
-            raise TypeError("incorrect input type: type(value)") from exc
-        return value
+# Import CCMExampleNoSubCluster class
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+CCMExampleNoSubCluster = getattr(
+    importlib.import_module('examples.cases.ccm_example_no_sub_cluster', 'CCMExampleNoSubCluster'), 
+    'CCMExampleNoSubCluster'
+)
+
+class CCMExampleWithSubCluster(CCMExampleNoSubCluster):
+    """CCM Example: 2 ranks, 3 tasks, 2 shared blocks. With sub cluster 2 tasks
+    on different ranks with same shared block)
+    """
+
+    def __init__(self):
+        CCMExampleNoSubCluster.__init__(self)
+        self.task_rank = [0, 1, 1]

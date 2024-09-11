@@ -37,7 +37,7 @@ import time
 import os
 import pulp
 
-from CcmMilp.Configuration import Config
+from ccm_milp.configuration import Config
 
 class CcmMilpGenerator:
     """Manage CCM-MILP problem - Setup, Generate and Solve"""
@@ -189,7 +189,7 @@ class CcmMilpGenerator:
         self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self_i) for n in range(self_n)), cat='Binary')
 
         # ψ: ranks <- communications self_i x self_i x self_m, binary variables in MILP
-        self.psi = dict()
+        self.psi = {}
         if is_fmwp:
             self.psi = pulp.LpVariable.dicts("psi", ((i, j, m)
                 for i in range(self_i)

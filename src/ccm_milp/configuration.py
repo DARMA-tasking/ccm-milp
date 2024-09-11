@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -33,13 +33,44 @@
 # Questions? Contact darma@sandia.gov
 #
 
-from ccm_example_no_sub_cluster import CCMExampleNoSubCluster
+class Config:
+    """Config object"""
+    def __init__(
+        self,
+        is_fmwp: bool,
+        alpha: float,
+        beta: float,
+        gamma: float,
+        delta: float,
+        bounded_memory:bool,
+        preserve_clusters:bool
+    ):
+        print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
+        print(f"  alpha = {alpha}")
+        print(f"  beta = {beta}")
+        print(f"  gamma = {gamma}")
+        print(f"  delta = {delta}")
+        print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
+        if preserve_clusters:
+            print("  while preserving block clusters")
+        self.is_fmwp = is_fmwp
+        self.is_comcp = not is_fmwp
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.delta = delta
+        self.bounded_memory = bounded_memory
+        self.preserve_clusters = preserve_clusters
 
-class CCMExampleWithSubCluster(CCMExampleNoSubCluster):
-    """CCM Example: 2 ranks, 3 tasks, 2 shared blocks. With sub cluster 2 tasks
-    on different ranks with same shared block)
-    """
+class Parameters:
+    """Parameters"""
 
-    def __init__(self):
-        CCMExampleNoSubCluster.__init__(self)
-        self.task_rank = [0, 1, 1]
+    @staticmethod
+    def defaults():
+        """Default parameters list"""
+        return {
+            "alpha": 1.0,
+            "beta": 0.0,
+            "gamma": 0.0,
+            "delta": 0.0
+        }
