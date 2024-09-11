@@ -115,8 +115,8 @@ class CcmMilpGenerator:
                 total_work = delta_cost
                 for k in range(self.k):
                     if pulp.value(self.chi[i, k]) == 1:
-                        solution[f"Task {k} of load {self.task_loads[k]}" +
-                            f"and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
+                        solution[f"Task {k} of load {self.task_loads[k]}"
+                            f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
                         ] = True
                         total_load += self.task_loads[k]
                         total_work += self.config.alpha * self.task_loads[k]
