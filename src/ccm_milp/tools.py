@@ -34,11 +34,14 @@
 #
 
 import importlib
-import os
-import sys
 
 class Tools:
     """ Tools"""
+
+    @staticmethod
+    def import_class(module: str, classname: str):
+        """ Import class from an external module"""
+        return getattr(importlib.import_module(module, classname), classname)
 
     @staticmethod
     def input_float(input_name: str, indent="  ", default=0.0):

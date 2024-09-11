@@ -4,11 +4,11 @@ import unittest
 import subprocess
 import pulp
 
+from src.ccm_milp.tools import Tools
+
 # Add global path
 sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../..')))
-
-# Import classes
-from examples.configuration import Examples
+Examples = Tools.import_class('examples.configuration', 'Examples')
 
 class TestExamples(unittest.TestCase):
     """Class to run tests on examples"""

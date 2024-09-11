@@ -40,7 +40,7 @@ import os
 # Import CCMExampleNoSubCluster class
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 CCMExampleNoSubCluster = getattr(
-    importlib.import_module('examples.cases.ccm_example_no_sub_cluster', 'CCMExampleNoSubCluster'), 
+    importlib.import_module('examples.data.ccm_example_no_sub_cluster', 'CCMExampleNoSubCluster'),
     'CCMExampleNoSubCluster'
 )
 

@@ -39,14 +39,14 @@ import argparse
 import importlib
 import yaml
 
-# Add global path
-sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../..')))
-
 # Import classes
 from ccm_milp.configuration import Config, Parameters
 from ccm_milp.generator import CcmMilpGenerator
 from ccm_milp.tools import Tools
-from examples.configuration import Examples
+
+# Add global path
+sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../..')))
+Examples = Tools.import_class('examples.configuration', 'Examples')
 
 # Global variables
 avail_examples = Examples.list() # Available CCM-MILP examples
@@ -144,7 +144,7 @@ def main():
     # Build and save linear program
     ccm_milp_generator = CcmMilpGenerator(
         Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module('examples.cases.' + ccm_example.filename), ccm_example.classname)()
+        getattr(importlib.import_module('examples.data.' + ccm_example.filename), ccm_example.classname)()
     )
 
     # Generate the problem and it's files
