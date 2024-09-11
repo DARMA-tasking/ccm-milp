@@ -15,11 +15,11 @@ Either in interactive mode:
 
 `python ccm_milp_full.py`
 
-or in direct mode with a configuration file in YAML format: 
-    
+or in direct mode with a configuration file in YAML format:
+
 `python ccm_milp_full.py -c <configuration file name>`
-    
-or with a specific solver installed on the machine: 
+
+or with a specific solver installed on the machine:
 
 `python ccm_milp_full.py -s <solver name: COIN_CMD, GLPK_CMD, PULP_CBC_CMD>`
 
@@ -30,10 +30,10 @@ Either in interactive mode:
 
 `python ccm_milp_problem.py`
 
-or in direct mode with a configuration file in YAML format: 
-    
+or in direct mode with a configuration file in YAML format:
+
 `python ccm_milp_problem.py -c <configuration file name>`
-    
+
 ### Solve a problem file (.mps):
 Solve the generated problem.mps file generated before:
 
@@ -43,9 +43,9 @@ Solve a specific .mps problem file:
 
 `python ccm_milp_solver.py -p <problem file .mps>`
 
-Solve with a specific solver installed on the machine: 
+Solve with a specific solver installed on the machine:
 
-`python ccm_milp_solver.py -s <solver name: COIN_CMD, GLPK_CMD, PULP_CBC_CMD>` 
+`python ccm_milp_solver.py -s <solver name: COIN_CMD, GLPK_CMD, PULP_CBC_CMD>`
 
 ## What to Expect:
 A text output in the terminal and a `.sol` file when it solve with the results of the optimization process, along with a `.lp` and `.mps` file containing the generated linear program.
