@@ -68,11 +68,11 @@ The example tested is `SyntheticBlock` with these differents configurations:
     * Configuration: `is_fwmp = False, bounded_memory: True`
     * Optimal objective value `2.00000000`
 
-* Fwmp with alpha
+* FWMP with alpha
     * Configuration: `is_fwmp = True`
     * Optimal objective value `2.00000000`
 
-* Fwmp with alpha-beta
+* FWMP with alpha-beta
     * Configuration: `is_fwmp = True, beta = 1`
     * Optimal objective value `4.00000000`
 
