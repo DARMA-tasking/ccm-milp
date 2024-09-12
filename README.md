@@ -49,3 +49,37 @@ Solve with a specific solver installed on the machine:
 
 ## What to Expect:
 A text output in the terminal and a `.sol` file when it solve with the results of the optimization process, along with a `.lp` and `.mps` file containing the generated linear program.
+
+## Expected Results:
+By default the configuration is:
+
+`alpha = 1, beta = 0, gamma = 0, delta= 0, bounded_memory = False, preserve_clusters = False`
+
+The example tested is `SyntheticBlock` with these differents configurations:
+* Load only
+    * Configuration: `is_fwmp = False`
+    * Optimal objective value `2.00000000`
+
+* Load only and-cluster
+    * Configuration: `is_fwmp = False, preserve_clusters = True`
+    * Optimal objective value `2.50000000`
+
+* Load only and-memory-bound
+    * Configuration: `is_fwmp = False, bounded_memory: True`
+    * Optimal objective value `2.00000000`
+
+* Fwmp with alpha
+    * Configuration: `is_fwmp = True`
+    * Optimal objective value `2.00000000`
+
+* Fwmp with alpha-beta
+    * Configuration: `is_fwmp = True, beta = 1`
+    * Optimal objective value `4.00000000`
+
+* Null case
+    * Configuration: `is_fwmp = True, alpha = 0, preserve_clusters = True`
+    * Optimal objective value `0.00000000`
+
+* Off node communication-only
+    * Configuration: `is_fwmp = True, alpha = 0, beta = 1`
+    * Optimal objective value `0.00000000`
