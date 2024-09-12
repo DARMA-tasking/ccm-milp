@@ -37,10 +37,11 @@ import os
 import argparse
 import importlib
 import sys
+from typing import Final
 import yaml
 
 # Import classes
-from ccm_milp.configuration import Config, Parameters
+from ccm_milp.configuration import Config, DefaultParameters
 from ccm_milp.generator import CcmMilpGenerator
 from ccm_milp.tools import Tools
 
@@ -49,7 +50,7 @@ sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../.
 Examples = Tools.import_class('examples.configuration', 'Examples')
 
 avail_examples = Examples.list() # Available CCM-MILP examples
-default_parameters = Parameters.defaults() # Default CCM parameter values
+DEFAULT_PARAMS: Final = DefaultParameters() # Default CCM parameter values
 
 def run_interactive():
     """Run with interactive selection of example"""
@@ -68,10 +69,10 @@ def run_interactive():
     return [
         avail_examples[example_id],
         is_fwmp := (input("  FWMP [y/N]? ") == 'y'),
-        Tools.input_float("alpha") if is_fwmp else default_parameters["alpha"],
-        Tools.input_float("beta") if is_fwmp else default_parameters["beta"],
-        Tools.input_float("gamma") if is_fwmp else default_parameters["gamma"],
-        Tools.input_float("delta") if is_fwmp else default_parameters["delta"],
+        Tools.input_float("alpha") if is_fwmp else DEFAULT_PARAMS.alpha,
+        Tools.input_float("beta") if is_fwmp else DEFAULT_PARAMS.beta,
+        Tools.input_float("gamma") if is_fwmp else DEFAULT_PARAMS.gamma,
+        Tools.input_float("delta") if is_fwmp else DEFAULT_PARAMS.delta,
         input("  bounded memory [y/N]? ") == 'y',
         input("  preserve clusters [y/N]? ") == 'y'
     ]
@@ -111,10 +112,10 @@ def run_batch(file_name: str):
     return [
         ccm_example,
         c_bool.get("is_fwmp", False),
-        c_float.get("alpha", default_parameters["alpha"]),
-        c_float.get("beta", default_parameters["beta"]),
-        c_float.get("gamma", default_parameters["gamma"]),
-        c_float.get("delta", default_parameters["delta"]),
+        c_float.get("alpha", DEFAULT_PARAMS.alpha),
+        c_float.get("beta", DEFAULT_PARAMS.beta),
+        c_float.get("gamma", DEFAULT_PARAMS.gamma),
+        c_float.get("delta", DEFAULT_PARAMS.delta),
         c_bool.get("bounded_memory", False),
         c_bool.get("preserve_clusters", False)
     ]

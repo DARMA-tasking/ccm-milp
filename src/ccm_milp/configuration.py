@@ -33,8 +33,20 @@
 # Questions? Contact darma@sandia.gov
 #
 
+from dataclasses import dataclass
+
+@dataclass
 class Config:
     """Config object"""
+    is_fmwp: bool
+    is_comcp: bool
+    alpha: float
+    beta: float
+    gamma: float
+    delta: float
+    bounded_memory: bool
+    preserve_clusters: bool
+
     def __init__(
         self,
         is_fmwp: bool,
@@ -62,15 +74,10 @@ class Config:
         self.bounded_memory = bounded_memory
         self.preserve_clusters = preserve_clusters
 
-class Parameters:
-    """Parameters"""
-
-    @staticmethod
-    def defaults():
-        """Default parameters list"""
-        return {
-            "alpha": 1.0,
-            "beta": 0.0,
-            "gamma": 0.0,
-            "delta": 0.0
-        }
+@dataclass
+class DefaultParameters:
+    """Default parameters"""
+    alpha: float = 1.0
+    beta: float = 0.0
+    gamma: float = 0.0
+    delta: float = 0.0
