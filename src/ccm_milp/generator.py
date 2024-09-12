@@ -167,34 +167,19 @@ class CcmMilpGenerator:
         # instantiante LP minimization problem
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
-        # Number of ranks
-        self_i = self.i
+        # chi: ranks <- tasks, self.i x self.k, binary variables in MILP
+        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat='Binary')
 
-        # Number of tasks
-        self_k = self.k
+        # phi: ranks <- shared blocks, self.i x self.n, binary variables in MILP
+        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat='Binary')
 
-        # Number of communications
-        self_m = self.m
-
-        # Number of shared blocks
-        self_n = self.n
-
-        is_comcp = self.config.is_comcp
-        is_fmwp = self.config.is_fmwp
-
-        # chi: ranks <- tasks, self_i x self_k, binary variables in MILP
-        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self_i) for k in range(self_k)), cat='Binary')
-
-        # φ: ranks <- shared blocks, self_i x self_n, binary variables in MILP
-        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self_i) for n in range(self_n)), cat='Binary')
-
-        # ψ: ranks <- communications self_i x self_i x self_m, binary variables in MILP
+        # psi: ranks <- communications self.i x self.i x self.m, binary variables in MILP
         self.psi = {}
-        if is_fmwp:
+        if self.config.is_fmwp:
             self.psi = pulp.LpVariable.dicts("psi", ((i, j, m)
-                for i in range(self_i)
-                for j in range(self_i)
-                for m in range(self_m)
+                for i in range(self.i)
+                for j in range(self.i)
+                for m in range(self.m)
             ), cat='Binary')
 
         # w_max: continuous variable in MILP for work defined by CCM model
@@ -205,15 +190,15 @@ class CcmMilpGenerator:
 
         # Add equation 14, constraining every task to a single rank:
         start_time = time.perf_counter()
-        for k in range(self_k):
-            self.problem += sum(self.chi[i, k] for i in range(self_i)) == 1
+        for k in range(self.k):
+            self.problem += sum(self.chi[i, k] for i in range(self.i)) == 1
         end_time = time.perf_counter()
         print(f"Added basic constraints in {end_time - start_time:0.4f}s")
 
         # Add equations 17 and 18 for shared block constraints
         start_time = time.perf_counter()
-        for i in range(self_i):
-            for n in range(self_n):
+        for i in range(self.i):
+            for n in range(self.n):
                 for p in range(len(self.task_memory_block_mapping[n])):
                     # Add equation 17
                     self.problem += self.phi[i, n] >= self.chi[i, self.task_memory_block_mapping[n][p]]
@@ -230,32 +215,32 @@ class CcmMilpGenerator:
         if self.config.bounded_memory:
             start_time = time.perf_counter()
             all_k_working_bytes_zero = True
-            for i in range(self_k):
+            for i in range(self.k):
                 if self.task_working_bytes[i] != 0:
                     all_k_working_bytes_zero = False
-            for i in range(self_i):
+            for i in range(self.i):
                 if all_k_working_bytes_zero:
                     # Add equation 19
                     self.problem += (
-                        sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self_k)) +
-                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self_n))
+                        sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.k)) +
+                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.n))
                     ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
                 else:
-                    for k in range(self_k):
+                    for k in range(self.k):
                         # Add equation 19
                         self.problem += (
-                            sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self_k)) +
+                            sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.k)) +
                             self.task_working_bytes[k] * self.chi[i, k] +
-                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self_n))
+                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.n))
                         ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
             end_time = time.perf_counter()
             print(f"Added memory constraints in {end_time - start_time:0.4f}s")
 
         # Add communication constraints in full model case
-        if is_fmwp:
+        if self.config.is_fmwp:
             start_time = time.perf_counter()
-            for i in range(self_i):
-                for j in range(self_i):
+            for i in range(self.i):
+                for j in range(self.i):
                     for p,_ in enumerate(self.task_communications): #for p in range(len(self.task_communications)):
                         # Add equation 25
                         self.problem += self.psi[i, j, p] <= self.chi[i, self.task_communications[p][0]]
@@ -271,21 +256,21 @@ class CcmMilpGenerator:
 
         # Add continuous constraints
         start_time = time.perf_counter()
-        if is_comcp:
-            for i in range(self_i):
+        if self.config.is_comcp:
+            for i in range(self.i):
                 # Add equation 20
-                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self_k)) <= self.w_max
-        elif is_fmwp:
-            for i in range(self_i):
+                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.k)) <= self.w_max
+        elif self.config.is_fmwp:
+            for i in range(self.i):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
-                remote_blocks = [n for n in range(self_n) if self.memory_block_home[n] != i]
+                remote_blocks = [n for n in range(self.n) if self.memory_block_home[n] != i]
 
                 # For rank i, build a list of all the other machines (all but i) for the second term of equation 30
-                other_machines = [j for j in range(self_i) if j != i]
+                other_machines = [j for j in range(self.i) if j != i]
 
                 # Compute unchanging terms in equation 30
                 alpha_term = self.config.alpha * sum(
-                    self.task_loads[k] * self.chi[i, k] for k in range(self_k))
+                    self.task_loads[k] * self.chi[i, k] for k in range(self.k))
                 gamma_term = self.config.gamma * sum(
                     self.psi[i, i, p] * self.task_communications[p][2]
                     for p in range(len(self.task_communications)))
@@ -308,8 +293,8 @@ class CcmMilpGenerator:
         # Add cluster-preserving constraints when requested
         if self.config.preserve_clusters:
             start_time = time.perf_counter()
-            for n in range(self_n):
-                self.problem += sum(self.phi[i, n] for i in range(self_i)) == 1
+            for n in range(self.n):
+                self.problem += sum(self.phi[i, n] for i in range(self.i)) == 1
             end_time = time.perf_counter()
             print(f"Added cluster-preserving constraints in {end_time - start_time:0.4f}s")
 
