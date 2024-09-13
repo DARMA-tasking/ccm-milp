@@ -83,3 +83,11 @@ The example tested is `SyntheticBlock` with these differents configurations:
 * Off node communication-only
     * Configuration: `is_fwmp = True, alpha = 0, beta = 1`
     * Optimal objective value `0.00000000`
+
+* Load no memory homing (delta: 0.1)
+    * Configuration: `is_fwmp = True, delta = 0.1, preserve_clusters = True`
+    * Optimal objective value `2.50000000`
+
+* Load no memory homing (delta: 0.3)
+    * Configuration: `is_fwmp = True, delta = 0.3, preserve_clusters = True`
+    * Optimal objective value `4.00000000`

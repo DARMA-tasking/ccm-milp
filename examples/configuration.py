@@ -114,6 +114,20 @@ class Examples:
                             'Objective:  OBJ = 0 (MINimum)'
                         ]
                     },
+                    {
+                        'file': '1-load-no-memory-homing-01.yaml',
+                        'regexp': [
+                            'Optimal - objective value 2.50000000',
+                            'Objective:  OBJ = 2.5 (MINimum)'
+                        ]
+                    },
+                    {
+                        'file': '1-load-no-memory-homing-03.yaml',
+                        'regexp': [
+                            'Optimal - objective value 4.00000000',
+                            'Objective:  OBJ = 4 (MINimum)'
+                        ]
+                    }
                 ]
             ),
             ExampleConfig(
