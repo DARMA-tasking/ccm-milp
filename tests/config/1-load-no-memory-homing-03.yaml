@@ -1,0 +1,4 @@
+example_id: 1
+is_fwmp: true
+delta: 0.3
+preserve_clusters: True
