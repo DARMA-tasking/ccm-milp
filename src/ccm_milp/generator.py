@@ -86,22 +86,49 @@ class CcmMilpGenerator:
 
         # Check solver
         if solver_name not in pulp.listSolvers(onlyAvailable=True):
-            print("*** Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
+            print("# Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
             raise ValueError(f"Solver not found: {solver_name}")
 
         print("# Solver: ", solver_name)
         self.solve_problem(self.problem, solver_name)
+
+    def verify_and_tally_edge(self, r_snd: int, r_rcv: int, c_ind: int):
+        """Check psi-chi consistency and return weight of existing edges"""
+        if not pulp.value(self.psi[r_snd, r_rcv, c_ind]):
+            # Edges absent from psi do not exist
+            return 0.0
+
+        # Retrieve communication entry
+        comm = self.task_communications[c_ind]
+
+        # Perform sanity checks
+        if not pulp.value(self.chi[r_snd, comm[0]]):
+            raise ValueError(
+                f"Inconsistent results: communication edge {c_ind}"
+                f" initiating from rank {r_snd}"
+                f" but its starting point {comm[0]}"
+                f" does not belong to rank {r_snd}")
+        if not pulp.value(self.chi[r_rcv, comm[1]]):
+            raise ValueError(
+                f"Inconsistent results: communication edge {c_ind}"
+                f" terminating at rank {r_rcv}"
+                f" but its end point {comm[1]}"
+                f" does not belong to rank {r_rcv}")
+
+        # Return communication weight
+        return comm[2]
 
     def output_solution(self):
         """Generate output report"""
         if self.problem.status == pulp.LpStatusOptimal:
             solution = {"w_max": pulp.value(self.w_max)}
             machine_memory_blocks_assigned = [[] for i in range(self.i)]
-            rank_totals = {}
+            rank_totals = []
             total_unhomed_blocks = 0
 
             # Iterate over ranks
             for i in range(self.i):
+                # Compute work for rank i
                 unhomed_blocks = 0
                 delta_cost = 0
                 for n in range(self.n):
@@ -121,21 +148,32 @@ class CcmMilpGenerator:
                         total_load += self.task_loads[k]
                         total_work += self.config.alpha * self.task_loads[k]
 
+                # Add communication costs when relevant
                 if self.psi:
-                    comm_cost = 0.0
+                    c_l, c_o, c_i = 0.0, 0.0, 0.0
+                    # Iterate over ranks
                     for j in range(self.i):
+                        # Check for communications between ranks i and j
                         for m in range(self.m):
-                            if( pulp.value(self.psi[i, j, m]) == 1.0 and
-                                pulp.value(self.chi[i, self.task_communications[m][0]]) == 1.0 and
-                                pulp.value(self.chi[j, self.task_communications[m][1]]) == 1.0
-                            ):
-                                comm_cost += self.task_communications[m][2] * (
-                                    self.config.gamma if i == j else self.config.beta
-                                )
-                    total_work += comm_cost
+                            # Distinguish local from global communications
+                            if i == j:
+                                # Tally local communications
+                                c_l += self.verify_and_tally_edge(i, i, m)
+
+                                # Skip subsequent non-local communications operations
+                                continue
+
+                            # Tally outgoing communications
+                            c_o += self.verify_and_tally_edge(i, j, m)
+
+                            # Tally incoming communications
+                            c_i += self.verify_and_tally_edge(j, i, m)
+
+                    # Update rank total work with communication costs
+                    total_work += self.config.beta * max(c_o, c_i) + self.config.gamma * c_l
 
                 # Keep track of totals on rank
-                rank_totals[i] = (total_load, total_work, unhomed_blocks)
+                rank_totals.append((total_load, total_work, unhomed_blocks))
 
             # Compute assignment array of tasks to ranks
             assignments = [-1] * self.k
@@ -149,14 +187,16 @@ class CcmMilpGenerator:
             for key, value in solution.items():
                 if key == "w_max":
                     continue
-                elif value:
+                if value:
                     print(key)
 
             print("\n# Solution summary:")
             for i in range(self.i):
-                t = rank_totals[i]
-                print(f"Rank {i}: L = {t[0]}, W = {t[1]}, unhomed: {t[2]}")
-            print("w_max =", solution["w_max"])
+                print(f"Rank {i}: "
+                      f"L = {rank_totals[i][0]}, "
+                      f"W = {rank_totals[i][1]}, "
+                      f"unhomed: {rank_totals[i][2]}")
+            print("W_max =", solution["w_max"])
             print(f"$assignments={assignments};")
 
         else: # if self.problem.status == pulp.LpStatusOptimal
