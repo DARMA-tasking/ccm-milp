@@ -97,26 +97,26 @@ class CcmMilpGenerator:
         if not pulp.value(self.psi[r_snd, r_rcv, c_ind]):
             # Edges absent from psi do not exist
             return 0.0
-        else:
-            # Retrieve communication entry
-            comm = self.task_communications[c_ind]
 
-            # Perform sanity checks
-            if not pulp.value(self.chi[r_snd, comm[0]]):
-                raise ValueError(
-                    f"Inconsistent results: communication edge {c_ind}"
-                    f" initiating from rank {r_snd}"
-                    f" but its starting point {comm[0]}"
-                    f" does not belong to rank {r_snd}")
-            if not pulp.value(self.chi[r_rcv, comm[1]]):
-                raise ValueError(
-                    f"Inconsistent results: communication edge {c_ind}"
-                    f" terminating at rank {r_rcv}"
-                    f" but its end point {comm[1]}"
-                    f" does not belong to rank {r_rcv}")
+        # Retrieve communication entry
+        comm = self.task_communications[c_ind]
 
-            # Return communication weight
-            return comm[2]
+        # Perform sanity checks
+        if not pulp.value(self.chi[r_snd, comm[0]]):
+            raise ValueError(
+                f"Inconsistent results: communication edge {c_ind}"
+                f" initiating from rank {r_snd}"
+                f" but its starting point {comm[0]}"
+                f" does not belong to rank {r_snd}")
+        if not pulp.value(self.chi[r_rcv, comm[1]]):
+            raise ValueError(
+                f"Inconsistent results: communication edge {c_ind}"
+                f" terminating at rank {r_rcv}"
+                f" but its end point {comm[1]}"
+                f" does not belong to rank {r_rcv}")
+
+        # Return communication weight
+        return comm[2]
 
     def output_solution(self):
         """Generate output report"""
@@ -162,7 +162,7 @@ class CcmMilpGenerator:
 
                                 # Skip subsequent non-local communications operations
                                 continue
-                            
+
                             # Tally outgoing communications
                             c_o += self.verify_and_tally_edge(i, j, m)
 
@@ -187,7 +187,7 @@ class CcmMilpGenerator:
             for key, value in solution.items():
                 if key == "w_max":
                     continue
-                elif value:
+                if value:
                     print(key)
 
             print("\n# Solution summary:")
