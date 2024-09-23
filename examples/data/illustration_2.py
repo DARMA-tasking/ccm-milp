@@ -1,6 +1,6 @@
-#                           DARMA Toolkit v. 1.0.0
+#                           DARMA Toolkit v. 1.5.0
 #
-# Copyright 2019 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
