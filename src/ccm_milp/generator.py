@@ -348,7 +348,7 @@ class CcmMilpGenerator:
         self.problem.writeMPS(file_name)
 
     @staticmethod
-    def permute(permutation_file: str, data_files: list[str], file_prefix: str):
+    def permute(permutation_file: str, data_files: list, file_prefix: str):
         """Apply permutation"""
         new_contents = {}
         new_task_map = {}
