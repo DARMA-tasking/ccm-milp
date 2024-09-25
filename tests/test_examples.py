@@ -118,5 +118,54 @@ class TestExamples(unittest.TestCase):
                     os.remove(lp_file)
                     os.remove(mps_file)
 
+    def test_permutation(self):
+        """Test permutation """
+        # Get src dir
+        root_dir = os.path.join(os.path.dirname(__file__), '..')
+        src_dir = os.path.join(root_dir, 'src')
+        data_dir = os.path.join(root_dir, 'data')
+
+        # Files
+        output_file_prefix = "test_permuted_"
+        permutation_file   = os.path.join(data_dir, "synthetic-blocks-permutation.json")
+        input_json_files   = [
+            os.path.join(data_dir, "synthetic-dataset-blocks.0.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.1.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.2.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.3.json")
+        ]
+
+        # Test all files exists
+        self.assertTrue(os.path.isfile(permutation_file), f'File: {permutation_file} does not exist!')
+        for input_json_file in input_json_files:
+            self.assertTrue(os.path.isfile(input_json_file), f'File: {input_json_file} does not exist!')
+
+        # Command line
+        subprocess.run([
+            'python',
+            os.path.join(src_dir, 'ccm_milp_permute_json.py'),
+            '--permutation-file=' + permutation_file,
+            "--input-json-files=" + "#".join(input_json_files),
+            '--output-file-prefix=' + output_file_prefix
+        ], check=True)
+
+        # Output files expected
+        output_json_files = [
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.0.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.1.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.2.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.3.json")
+        ]
+
+        # Check files exists
+        for output_json_file in output_json_files:
+            self.assertTrue(os.path.isfile(output_json_file), f'File: {output_json_file} does not exist!')
+
+        #TODO: Check files are correctly permuted
+
+        # CLean generated files
+        for output_json_file in output_json_files:
+            os.remove(output_json_file)
+
 if __name__ == '__main__':
     unittest.main()
