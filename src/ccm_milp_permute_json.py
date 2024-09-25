@@ -45,7 +45,7 @@ file_separator: str = "#"
 def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: str):
     """Run permutation"""
     # Read input json data
-    datafiles: list[str] = file_input_json_files.split(file_separator)
+    datafiles = file_input_json_files.split(file_separator)
 
     # Call permute function
     CcmMilpGenerator.permute(
