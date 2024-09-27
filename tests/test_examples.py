@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 import subprocess
+import json
 import pulp
 
 from src.ccm_milp.tools import Tools
@@ -117,6 +118,84 @@ class TestExamples(unittest.TestCase):
                     # Clear created files
                     os.remove(lp_file)
                     os.remove(mps_file)
+
+    def test_permutation(self):
+        """Test permutation """
+        # Get src dir
+        src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
+        data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+
+        # Files
+        output_file_prefix = "test_permuted_"
+        permutation_file   = os.path.join(data_dir, "synthetic-blocks-permutation.json")
+        input_json_files   = [
+            os.path.join(data_dir, "synthetic-dataset-blocks.0.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.1.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.2.json"),
+            os.path.join(data_dir, "synthetic-dataset-blocks.3.json")
+        ]
+
+        # Test all files exists
+        self.assertTrue(os.path.isfile(permutation_file), f'File: {permutation_file} does not exist!')
+        for input_json_file in input_json_files:
+            self.assertTrue(os.path.isfile(input_json_file), f'File: {input_json_file} does not exist!')
+
+        # Command line
+        subprocess.run([
+            'python',
+            os.path.join(src_dir, 'ccm_milp_permute_json.py'),
+            '--permutation-file=' + permutation_file,
+            "--input-json-files=" + "#".join(input_json_files),
+            '--output-file-prefix=' + output_file_prefix
+        ], check=True)
+
+        permutations = []
+        with open(permutation_file, 'r', encoding="UTF-8") as f:
+            permutations = json.load(f)
+
+        tasks_by_rank = {}
+        for permutation in permutations:
+            if permutation not in tasks_by_rank:
+                tasks_by_rank[permutation] = 1
+            else:
+                tasks_by_rank[permutation] += 1
+
+        # Output files expected
+        output_json_files = [
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.0.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.1.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.2.json"),
+            os.path.join(data_dir, output_file_prefix + "synthetic-dataset-blocks.3.json")
+        ]
+
+        # Check files exists
+        for output_json_file in output_json_files:
+            # Check file exists
+            self.assertTrue(os.path.isfile(output_json_file), f'File: {output_json_file} does not exist!')
+
+            # Get the rank from filename
+            rank: int = -1
+            if len(output_json_file.split('.')) > 1:
+                split_output_json_filename =  output_json_file.split('.')
+                rank = int(split_output_json_filename[len(split_output_json_filename) - 2])
+
+            # Load output json
+            output_json = {}
+            with open(output_json_file, 'r', encoding="UTF-8") as f:
+                output_json = json.load(f)
+
+            # Get the number of tasks expected for the rank
+            number_of_tasks = len(output_json["phases"][1]["tasks"])
+
+            # Check that the number of tasks expected for the rank is correct
+            print(f"Rank {rank} expected {tasks_by_rank[rank]} task(s), found {number_of_tasks}" )
+            self.assertTrue(
+                len(output_json["phases"][1]["tasks"]) == tasks_by_rank[rank],
+                f'File: {output_json_file} does not exist!'
+            )
+
+            # CLean generated files
+            os.remove(output_json_file)
 
 if __name__ == '__main__':
     unittest.main()

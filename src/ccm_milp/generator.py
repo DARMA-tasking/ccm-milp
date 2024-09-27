@@ -35,6 +35,7 @@
 
 import time
 import os
+import json
 import pulp
 
 from ccm_milp.configuration import Config
@@ -345,6 +346,97 @@ class CcmMilpGenerator:
     def write_mps_to_file(self, file_name : str):
         """Generate the problem file .mps"""
         self.problem.writeMPS(file_name)
+
+    @staticmethod
+    def permute(permutation_file: str, data_files: list, file_prefix: str):
+        """Apply permutation"""
+        new_contents = {}
+        new_task_map = {}
+        task_id = 0
+
+        # Read permutation data
+        permutation = {}
+        with open(permutation_file, 'r', encoding="UTF-8") as f:
+            permutation = json.load(f)
+
+        print(f"\nParsing permitation={permutation}\n")
+
+        # Permute sorted data
+        def sort_func(filepath):
+            """Sort using the int into the file name"""
+            return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
+        data_files.sort(key=sort_func)
+
+        print(f"Input data file sorted: {data_files}\n")
+        for data_file in data_files:
+
+            # Get content file
+            data_json = None
+            with open(data_file, 'r', encoding="UTF-8") as f:
+                data_json = json.load(f)
+
+            # Get rank from filename (/some/path/data.{rank}.json})
+            rank: int = -1
+            if len(data_file.split('.')) > 1:
+                split_data_filename =  data_file.split('.')
+                rank = int(split_data_filename[len(split_data_filename) - 2])
+
+            # Get tasks
+            tasks = data_json["phases"][0]["tasks"]
+            print(f"Parsing file={data_file}, rank={rank}\n")
+
+            for task in tasks:
+                if "user_defined" in task:
+                    new_rank = permutation[task_id]
+
+                    # Create dict
+                    if new_task_map.get(new_rank) is None:
+                        new_task_map[new_rank] = []
+
+                    # Add task into the rank
+                    new_task_map[new_rank].append(task)
+
+                    # Increments counters
+                    task_id += 1
+
+            # New contant
+            new_contents[rank] = data_json
+
+        # Create new JSON
+        for data_file in data_files:
+            # Get rank
+            rank: int = -1
+            if len(data_file.split('.')) > 1:
+                split_data_filename =  data_file.split('.')
+                rank = int(split_data_filename[len(split_data_filename) - 2])
+
+            if rank in new_task_map:
+                print(f"Process permutation on file: {data_file}, rank: {rank}\n")
+
+                # data json
+                index_phase: int = 1
+                data_json = new_contents[rank]
+                data_json["phases"].append({
+                    "id": index_phase,
+                    "tasks": []
+                })
+
+                # reoder
+                for task in new_task_map[rank]:
+                    data_json["phases"][index_phase]["tasks"].append(task)
+            else:
+                print(f"NO PERMUTATION for data file: {data_file}, rank: {rank}\n")
+
+            # Create output filename
+            data_file_path = data_file.split("/")
+            data_file_path[len(data_file_path)-1] = file_prefix + data_file_path[len(data_file_path)-1]
+            output_permuted_file = "/".join(data_file_path)
+
+            print(f"Generate permuted file: {output_permuted_file}, rank: {rank}\n")
+
+            # Create output file
+            with open(output_permuted_file, 'w', encoding="UTF-8") as f:
+                json.dump(data_json, f)
 
     @staticmethod
     def solve_problem(problem, solver_name: str):
