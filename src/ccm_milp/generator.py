@@ -352,6 +352,7 @@ class CcmMilpGenerator:
         """Apply permutation"""
         new_contents = {}
         new_task_map = {}
+        new_communication_map = {}
         task_id = 0
 
         # Read permutation data
@@ -381,25 +382,40 @@ class CcmMilpGenerator:
                 split_data_filename =  data_file.split('.')
                 rank = int(split_data_filename[len(split_data_filename) - 2])
 
-            # Get tasks
-            tasks = data_json["phases"][0]["tasks"]
             print(f"Parsing file={data_file}, rank={rank}\n")
 
-            for task in tasks:
-                if "user_defined" in task:
-                    new_rank = permutation[task_id]
+            # Get tasks
+            tasks = data_json["phases"][0].get("tasks")
+            if tasks is not None and len(tasks) > 0:
+                for task in tasks:
+                    if "user_defined" in task:
+                        new_rank = permutation[task_id]
+
+                        # Create dict
+                        if new_task_map.get(new_rank) is None:
+                            new_task_map[new_rank] = []
+
+                        # Add task into the rank
+                        new_task_map[new_rank].append(task)
+
+                        # Increments counters
+                        task_id += 1
+
+            # Get communications
+            communications = data_json["phases"][0].get("communications")
+            if communications is not None and len(communications) > 0:
+                for communication in communications:
+                    # Get from task id
+                    from_task_id = communication["from"]["id"]
 
                     # Create dict
-                    if new_task_map.get(new_rank) is None:
-                        new_task_map[new_rank] = []
+                    if new_communication_map.get(from_task_id) is None:
+                        new_communication_map[from_task_id] = []
 
-                    # Add task into the rank
-                    new_task_map[new_rank].append(task)
+                    # Add communication into the rank
+                    new_communication_map[from_task_id].append(communication)
 
-                    # Increments counters
-                    task_id += 1
-
-            # New contant
+            # New content
             new_contents[rank] = data_json
 
         # Create new JSON
@@ -413,17 +429,31 @@ class CcmMilpGenerator:
             if rank in new_task_map:
                 print(f"Process permutation on file: {data_file}, rank: {rank}\n")
 
-                # data json
+                # Get phase index
                 index_phase: int = 1
+
+                # data json
                 data_json = new_contents[rank]
                 data_json["phases"].append({
                     "id": index_phase,
                     "tasks": []
                 })
 
-                # reoder
+                # Apply permutations
                 for task in new_task_map[rank]:
+                    # Add task
                     data_json["phases"][index_phase]["tasks"].append(task)
+
+                    # Get task id
+                    from_task_id = task.get('entity').get('id')
+
+                    # add communications
+                    if new_communication_map.get(from_task_id) is not None:
+                        for commmunications in new_communication_map.get(from_task_id):
+                            if data_json["phases"][index_phase].get("commmunications") is None:
+                                data_json["phases"][index_phase]["commmunications"] = []
+
+                            data_json["phases"][index_phase]["commmunications"].append(commmunications)
             else:
                 print(f"NO PERMUTATION for data file: {data_file}, rank: {rank}\n")
 
