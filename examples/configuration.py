@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -33,27 +33,38 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import os
+import fnmatch
+
 class ExampleConfig:
     """Examples Configs"""
     def __init__(
         self,
         filename: str = None,
         classname: str = None,
+        json: list = [],
         test: bool = False,
         test_configs: any = None,
         test_regexp: dict = None
     ):
         self.filename = filename
         self.classname = classname
+        self.json = json
         self.test = test
         self.test_configs = test_configs
         self.test_regexp = test_regexp
 
 class Examples:
     """Examples"""
+
+    # Global variables
+    data_file_pattern = "data.*.json"
+    data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+
     @staticmethod
     def list():
         """Examples list"""
+
         # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
         return [
             ExampleConfig(
@@ -63,6 +74,7 @@ class Examples:
             ExampleConfig(
                 filename = 'synthetic_blocks',
                 classname = 'SyntheticBlocks',
+                json = Examples.list_data_files("synthetic_blocks"),
                 test = True,
                 test_configs = [
                     {
@@ -147,3 +159,21 @@ class Examples:
                 classname = 'Illustration2'
             )
         ]
+
+    @staticmethod
+    def list_data_files(example_name: str) -> list:
+        """Get all data file paths from data/<example_name> dir"""
+        # Get example dir
+        example_data_dir = os.path.join(Examples.data_dir, example_name)
+
+        # Get filed with the good data file pattern
+        data_files: list = []
+        for file in os.listdir(example_data_dir):
+            if fnmatch.fnmatch(file, Examples.data_file_pattern):
+                data_files.append(os.path.join(example_data_dir, file))
+
+        # sort files
+        data_files.sort()
+
+        # Return the list of absolute path for each data files found
+        return data_files

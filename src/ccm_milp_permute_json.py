@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.5.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -34,13 +34,12 @@
 #
 
 import argparse
-import os
 import sys
 
 from ccm_milp.generator import CcmMilpGenerator
 
 # Globales variables
-file_separator: str = "#"
+file_separator: str = ' '
 
 def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: str):
     """Run permutation"""
@@ -59,13 +58,13 @@ def main():
 
     # Manage options
     parser = argparse.ArgumentParser(
-        prog='CCM-MILP permute',
-        description='Permute data in function of assignements'
+        prog="CCM-MILP permute",
+        description="Permute data in function of assignements"
     )
 
-    parser.add_argument('-f', '--permutation-file', help='The permutation file in JSON', default=None)
-    parser.add_argument('-i', '--input-json-files', help="The input data file in JSON", default=None)
-    parser.add_argument('-o', '--output-file-prefix', help="The output file prefix", default="permuted_")
+    parser.add_argument("-f", "--permutation-file", help="The permutation file in JSON", default=None)
+    parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
+    parser.add_argument("-o", "--output-file-prefix", help="The output file prefix", default="permuted_")
 
     # Get options
     args = parser.parse_args()

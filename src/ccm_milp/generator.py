@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -38,7 +38,8 @@ import os
 import json
 import pulp
 
-from ccm_milp.configuration import Config
+from .configuration import Config
+from .data import Data
 
 class CcmMilpGenerator:
     """Manage CCM-MILP problem - Setup, Generate and Solve"""
@@ -69,16 +70,16 @@ class CcmMilpGenerator:
         self.psi = None
         self.w_max = None
 
+        self.problem = None
+
         print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.i}")
         print(f"Ranks={self.i}, task_loads={self.k}, memory_blocks={self.n} comms={self.m}")
-
-        self.problem = None
 
     def generate_problem(self):
         """Generate the problem"""
         self.setup_milp()
-        self.write_lp_to_file(os.path.join(os.path.dirname(__file__),'..', 'problem.lp'))
-        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),'..', 'problem.mps'))
+        self.write_lp_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.lp"))
+        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.mps"))
 
     def generate_problem_and_solve(self, solver_name: str):
         """Generate the problem and solve it"""
@@ -119,7 +120,7 @@ class CcmMilpGenerator:
         # Return communication weight
         return comm[2]
 
-    def output_solution(self):
+    def output_solution(self, permutation_file: str = "permutation.json"):
         """Generate output report"""
         if self.problem.status == pulp.LpStatusOptimal:
             solution = {"w_max": pulp.value(self.w_max)}
@@ -184,6 +185,10 @@ class CcmMilpGenerator:
                     if pulp.value(self.chi[i, k]) > 0.5:
                         assignments[k] = i
 
+            # Create permutation file
+            with open(os.path.join(self.output_dir(), permutation_file), 'w', encoding="utf-8") as f:
+                json.dump(assignments, f)
+
             print("\n# Detailed solution:")
             for key, value in solution.items():
                 if key == "w_max":
@@ -209,10 +214,10 @@ class CcmMilpGenerator:
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
         # chi: ranks <- tasks, self.i x self.k, binary variables in MILP
-        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat='Binary')
+        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat="Binary")
 
         # phi: ranks <- shared blocks, self.i x self.n, binary variables in MILP
-        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat='Binary')
+        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat="Binary")
 
         # psi: ranks <- communications self.i x self.i x self.m, binary variables in MILP
         self.psi = {}
@@ -221,10 +226,10 @@ class CcmMilpGenerator:
                 for i in range(self.i)
                 for j in range(self.i)
                 for m in range(self.m)
-            ), cat='Binary')
+            ), cat="Binary")
 
         # w_max: continuous variable in MILP for work defined by CCM model
-        self.w_max = pulp.LpVariable("w_max", lowBound=0, cat='Continuous')
+        self.w_max = pulp.LpVariable("w_max", lowBound=0, cat="Continuous")
 
         # Add the continuous variable to the problem
         self.problem += self.w_max
@@ -357,10 +362,10 @@ class CcmMilpGenerator:
 
         # Read permutation data
         permutation = {}
-        with open(permutation_file, 'r', encoding="UTF-8") as f:
+        with open(permutation_file, 'r', encoding="utf-8") as f:
             permutation = json.load(f)
 
-        print(f"\nParsing permitation={permutation}\n")
+        print(f"\nProcess permutation={permutation}\n")
 
         # Permute sorted data
         def sort_func(filepath):
@@ -368,12 +373,12 @@ class CcmMilpGenerator:
             return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
         data_files.sort(key=sort_func)
 
-        print(f"Input data file sorted: {data_files}\n")
+        # Sort input data file
         for data_file in data_files:
 
             # Get content file
             data_json = None
-            with open(data_file, 'r', encoding="UTF-8") as f:
+            with open(data_file, 'r', encoding="utf-8") as f:
                 data_json = json.load(f)
 
             # Get rank from filename (/some/path/data.{rank}.json})
@@ -381,8 +386,6 @@ class CcmMilpGenerator:
             if len(data_file.split('.')) > 1:
                 split_data_filename =  data_file.split('.')
                 rank = int(split_data_filename[len(split_data_filename) - 2])
-
-            print(f"Parsing file={data_file}, rank={rank}\n")
 
             # Get tasks
             tasks = data_json["phases"][0].get("tasks")
@@ -427,8 +430,6 @@ class CcmMilpGenerator:
                 rank = int(split_data_filename[len(split_data_filename) - 2])
 
             if rank in new_task_map:
-                print(f"Process permutation on file: {data_file}, rank: {rank}\n")
-
                 # Get phase index
                 index_phase: int = 1
 
@@ -445,7 +446,7 @@ class CcmMilpGenerator:
                     data_json["phases"][index_phase]["tasks"].append(task)
 
                     # Get task id
-                    from_task_id = task.get('entity').get('id')
+                    from_task_id = task.get("entity").get("id")
 
                     # add communications
                     if new_communication_map.get(from_task_id) is not None:
@@ -458,15 +459,27 @@ class CcmMilpGenerator:
                 print(f"NO PERMUTATION for data file: {data_file}, rank: {rank}\n")
 
             # Create output filename
-            data_file_path = data_file.split("/")
-            data_file_path[len(data_file_path)-1] = file_prefix + data_file_path[len(data_file_path)-1]
-            output_permuted_file = "/".join(data_file_path)
+            output_permuted_filename = file_prefix + data_file.split("/").pop()
+            output_permuted_file = os.path.join(CcmMilpGenerator.output_dir(), output_permuted_filename)
 
-            print(f"Generate permuted file: {output_permuted_file}, rank: {rank}\n")
+            print(f"Generate permuted file: {output_permuted_file}, rank: {rank}")
 
             # Create output file
-            with open(output_permuted_file, 'w', encoding="UTF-8") as f:
+            with open(output_permuted_file, 'w', encoding="utf-8") as f:
                 json.dump(data_json, f)
+
+    @staticmethod
+    def parse_json(data_files: list) -> Data:
+        """Parse json data files to python"""
+        # Permute sorted data
+        def sort_func(filepath):
+            """Sort using the int into the file name"""
+            return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
+        data_files.sort(key=sort_func)
+
+        data = Data()
+        data.parse_json(data_files)
+        return data
 
     @staticmethod
     def solve_problem(problem, solver_name: str):
@@ -480,3 +493,12 @@ class CcmMilpGenerator:
 
         # Solve the problem
         problem.solve()
+
+    @staticmethod
+    def output_dir(output_dirname: str = "output") -> str:
+        """Get and create output dir"""
+        output_dir = os.path.join(os.path.dirname(__file__), "../..", output_dirname)
+        if os.path.isdir(output_dir) is False:
+            os.mkdir(output_dir)
+
+        return output_dir

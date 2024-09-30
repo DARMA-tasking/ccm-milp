@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -46,8 +46,8 @@ from ccm_milp.generator import CcmMilpGenerator
 from ccm_milp.tools import Tools
 
 # Add global path
-sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), '../..')))
-Examples = Tools.import_class('examples.configuration', 'Examples')
+sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../..")))
+Examples = Tools.import_class("examples.configuration", "Examples")
 
 # Global variables
 avail_examples = Examples.list() # Available CCM-MILP examples
@@ -70,13 +70,13 @@ def run_interactive():
     print("\n# Model configuration:")
     return [
         avail_examples[example_id],
-        is_fwmp := (input("  FWMP [y/N]? ") == 'y'),
+        is_fwmp := (input("  FWMP [y/N]? ") == "y"),
         Tools.input_float("alpha") if is_fwmp else DEFAULT_PARAMS.alpha,
         Tools.input_float("beta") if is_fwmp else DEFAULT_PARAMS.beta,
         Tools.input_float("gamma") if is_fwmp else DEFAULT_PARAMS.gamma,
         Tools.input_float("delta") if is_fwmp else DEFAULT_PARAMS.delta,
-        input("  bounded memory [y/N]? ") == 'y',
-        input("  preserve clusters [y/N]? ") == 'y'
+        input("  bounded memory [y/N]? ") == "y",
+        input("  preserve clusters [y/N]? ") == "y"
     ]
 
 def run_batch(file_name: str):
@@ -85,7 +85,7 @@ def run_batch(file_name: str):
 
     # Try to read YAML configuration file
     try:
-        with open(file_name, "r", encoding="utf-8") as f:
+        with open(file_name, 'r', encoding="utf-8") as f:
             parameters = yaml.safe_load(f)
     except: # pylint: disable=bare-except
         print ("*** Could not parse", file_name)
@@ -127,10 +127,10 @@ def main():
 
     # Manage options
     parser = argparse.ArgumentParser(
-        prog='CCM-MILP Solver',
-        description='Generate & solve a problem'
+        prog="CCM-MILP Solver",
+        description="Generate & solve a problem"
     )
-    parser.add_argument('-c', '--config', help='The config.yaml file', default=None)
+    parser.add_argument("-c", "--config", help="The config.yaml file", default=None)
 
     # Get options
     args = parser.parse_args()
@@ -145,10 +145,10 @@ def main():
     # Build and save linear program
     ccm_milp_generator = CcmMilpGenerator(
         Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module('examples.data.' + ccm_example.filename), ccm_example.classname)()
+        getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
     )
 
-    # Generate the problem and it's files
+    # Generate the problem and it"s files
     ccm_milp_generator.generate_problem()
 
 if __name__ == "__main__":
