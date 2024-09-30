@@ -1,4 +1,4 @@
-#                           DARMA Toolkit v. 1.0.0
+#                           DARMA Toolkit v. 1.5.0
 #
 # Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
@@ -33,51 +33,43 @@
 # Questions? Contact darma@sandia.gov
 #
 
-from dataclasses import dataclass
+import argparse
+import sys
 
-@dataclass
-class Config:
-    """Config object"""
-    is_fmwp: bool
-    is_comcp: bool
-    alpha: float
-    beta: float
-    gamma: float
-    delta: float
-    bounded_memory: bool
-    preserve_clusters: bool
+from ccm_milp.generator import CcmMilpGenerator
 
-    def __init__(
-        self,
-        is_fmwp: bool,
-        alpha: float,
-        beta: float,
-        gamma: float,
-        delta: float,
-        bounded_memory:bool,
-        preserve_clusters:bool
-    ):
-        print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
-        print(f"  alpha = {alpha}")
-        print(f"  beta = {beta}")
-        print(f"  gamma = {gamma}")
-        print(f"  delta = {delta}")
-        print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
-        if preserve_clusters:
-            print("  while preserving block clusters")
-        self.is_fmwp = is_fmwp
-        self.is_comcp = not is_fmwp
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.delta = delta
-        self.bounded_memory = bounded_memory
-        self.preserve_clusters = preserve_clusters
+# Globales variables
+file_separator: str = " "
 
-@dataclass
-class DefaultParameters:
-    """Default parameters"""
-    alpha: float = 1.0
-    beta: float = 0.0
-    gamma: float = 0.0
-    delta: float = 0.0
+def run_batch(file_input_json_files: str):
+    """Run permutation"""
+    # Read input json data
+    datafiles = file_input_json_files.split(file_separator)
+
+    # Call permute function
+    CcmMilpGenerator.parse_json(data_files = datafiles)
+
+def main():
+    """Main"""
+
+    # Manage options
+    parser = argparse.ArgumentParser(
+        prog='CCM-MILP parse json',
+        description='Parse json data to a python class oused by problem solver'
+    )
+
+    parser.add_argument('-i', '--input-json-files', help="The input data file in JSON", default=None)
+
+    # Get options
+    args = parser.parse_args()
+    input_json_files = args.input_json_files
+
+    # Retrieve parameters in batch mode
+    if input_json_files:
+        run_batch(input_json_files)
+    else:
+        print(f"Missing aruments: (input-json-files = {input_json_files})")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

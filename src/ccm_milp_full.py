@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -142,17 +142,29 @@ def main():
     else:
         ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
 
-    # Build and save linear program
-    ccm_milp_generator = CcmMilpGenerator(
-        Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module('examples.data.' + ccm_example.filename), ccm_example.classname)()
-    )
+    # Manage avialable example with json
+    data = None
+    if len(ccm_example.json) > 0:
+        data = CcmMilpGenerator.parse_json(ccm_example.json)
+    else:
+        data = getattr(importlib.import_module('examples.data.' + ccm_example.filename), ccm_example.classname)()
 
+    # Build and save linear program
+    ccm_milp_generator = CcmMilpGenerator(Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl), data)
     ccm_milp_generator.generate_problem_and_solve(solver_name)
 
     # Report solution to linear program when found
-    ccm_milp_generator.output_solution()
+    permutation_file: str =  ccm_example.filename + "_" + "permutation.json"
+    ccm_milp_generator.output_solution(permutation_file)
     print()
+
+    if len(ccm_example.json) > 0:
+        # Call permute function
+        CcmMilpGenerator.permute(
+            permutation_file = os.path.join(CcmMilpGenerator.output_dir(), permutation_file),
+            data_files = ccm_example.json,
+            file_prefix="permuted_"
+        )
 
 if __name__ == "__main__":
     main()

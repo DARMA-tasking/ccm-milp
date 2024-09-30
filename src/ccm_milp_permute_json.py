@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.5.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -34,13 +34,12 @@
 #
 
 import argparse
-import os
 import sys
 
 from ccm_milp.generator import CcmMilpGenerator
 
 # Globales variables
-file_separator: str = "#"
+file_separator: str = " "
 
 def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: str):
     """Run permutation"""

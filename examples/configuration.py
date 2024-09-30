@@ -1,6 +1,6 @@
 #                           DARMA Toolkit v. 1.0.0
 #
-# Copyright 2024 National Technology & Engineering Solutions of Sandia, LLC
+# Copyright 2019-2024 National Technology & Engineering Solutions of Sandia, LLC
 # (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S.
 # Government retains certain rights in this software.
 #
@@ -33,27 +33,35 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import os
+
 class ExampleConfig:
     """Examples Configs"""
     def __init__(
         self,
         filename: str = None,
         classname: str = None,
+        json: list = [],
         test: bool = False,
         test_configs: any = None,
         test_regexp: dict = None
     ):
         self.filename = filename
         self.classname = classname
+        self.json = json
         self.test = test
         self.test_configs = test_configs
         self.test_regexp = test_regexp
 
 class Examples:
     """Examples"""
+
     @staticmethod
     def list():
         """Examples list"""
+        # Get src dir
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+
         # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
         return [
             ExampleConfig(
@@ -63,6 +71,12 @@ class Examples:
             ExampleConfig(
                 filename = 'synthetic_blocks',
                 classname = 'SyntheticBlocks',
+                json = [
+                    os.path.join(data_dir, "synthetic_blocks", "data.0.json"),
+                    os.path.join(data_dir, "synthetic_blocks", "data.1.json"),
+                    os.path.join(data_dir, "synthetic_blocks", "data.2.json"),
+                    os.path.join(data_dir, "synthetic_blocks", "data.3.json")
+                ],
                 test = True,
                 test_configs = [
                     {
