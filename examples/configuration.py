@@ -34,6 +34,7 @@
 #
 
 import os
+import fnmatch
 
 class ExampleConfig:
     """Examples Configs"""
@@ -56,11 +57,13 @@ class ExampleConfig:
 class Examples:
     """Examples"""
 
+    # Global variables
+    data_file_pattern = "data.*.json"
+    data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+
     @staticmethod
     def list():
         """Examples list"""
-        # Get src dir
-        data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
 
         # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
         return [
@@ -71,12 +74,7 @@ class Examples:
             ExampleConfig(
                 filename = 'synthetic_blocks',
                 classname = 'SyntheticBlocks',
-                json = [
-                    os.path.join(data_dir, "synthetic_blocks", "data.0.json"),
-                    os.path.join(data_dir, "synthetic_blocks", "data.1.json"),
-                    os.path.join(data_dir, "synthetic_blocks", "data.2.json"),
-                    os.path.join(data_dir, "synthetic_blocks", "data.3.json")
-                ],
+                json = Examples.list_data_files("synthetic_blocks"),
                 test = True,
                 test_configs = [
                     {
@@ -161,3 +159,21 @@ class Examples:
                 classname = 'Illustration2'
             )
         ]
+
+    @staticmethod
+    def list_data_files(example_name: str) -> list:
+        """Get all data file paths from data/<example_name> dir"""
+        # Get example dir
+        example_data_dir = os.path.join(Examples.data_dir, example_name)
+
+        # Get filed with the good data file pattern
+        data_files: list = []
+        for file in os.listdir(example_data_dir):
+            if fnmatch.fnmatch(file, Examples.data_file_pattern):
+                data_files.append(os.path.join(example_data_dir, file))
+
+        # sort files
+        data_files.sort()
+
+        # Return the list of absolute path for each data files found
+        return data_files
