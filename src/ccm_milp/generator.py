@@ -78,8 +78,8 @@ class CcmMilpGenerator:
     def generate_problem(self):
         """Generate the problem"""
         self.setup_milp()
-        self.write_lp_to_file(os.path.join(os.path.dirname(__file__),'..', 'problem.lp'))
-        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),'..', 'problem.mps'))
+        self.write_lp_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.lp"))
+        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.mps"))
 
     def generate_problem_and_solve(self, solver_name: str):
         """Generate the problem and solve it"""
@@ -186,7 +186,7 @@ class CcmMilpGenerator:
                         assignments[k] = i
 
             # Create permutation file
-            with open(os.path.join(self.output_dir(), permutation_file), 'w', encoding="UTF-8") as f:
+            with open(os.path.join(self.output_dir(), permutation_file), 'w', encoding="utf-8") as f:
                 json.dump(assignments, f)
 
             print("\n# Detailed solution:")
@@ -214,10 +214,10 @@ class CcmMilpGenerator:
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
         # chi: ranks <- tasks, self.i x self.k, binary variables in MILP
-        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat='Binary')
+        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat="Binary")
 
         # phi: ranks <- shared blocks, self.i x self.n, binary variables in MILP
-        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat='Binary')
+        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat="Binary")
 
         # psi: ranks <- communications self.i x self.i x self.m, binary variables in MILP
         self.psi = {}
@@ -226,10 +226,10 @@ class CcmMilpGenerator:
                 for i in range(self.i)
                 for j in range(self.i)
                 for m in range(self.m)
-            ), cat='Binary')
+            ), cat="Binary")
 
         # w_max: continuous variable in MILP for work defined by CCM model
-        self.w_max = pulp.LpVariable("w_max", lowBound=0, cat='Continuous')
+        self.w_max = pulp.LpVariable("w_max", lowBound=0, cat="Continuous")
 
         # Add the continuous variable to the problem
         self.problem += self.w_max
@@ -362,7 +362,7 @@ class CcmMilpGenerator:
 
         # Read permutation data
         permutation = {}
-        with open(permutation_file, 'r', encoding="UTF-8") as f:
+        with open(permutation_file, 'r', encoding="utf-8") as f:
             permutation = json.load(f)
 
         print(f"\nProcess permutation={permutation}\n")
@@ -378,7 +378,7 @@ class CcmMilpGenerator:
 
             # Get content file
             data_json = None
-            with open(data_file, 'r', encoding="UTF-8") as f:
+            with open(data_file, 'r', encoding="utf-8") as f:
                 data_json = json.load(f)
 
             # Get rank from filename (/some/path/data.{rank}.json})
@@ -446,7 +446,7 @@ class CcmMilpGenerator:
                     data_json["phases"][index_phase]["tasks"].append(task)
 
                     # Get task id
-                    from_task_id = task.get('entity').get('id')
+                    from_task_id = task.get("entity").get("id")
 
                     # add communications
                     if new_communication_map.get(from_task_id) is not None:
@@ -465,7 +465,7 @@ class CcmMilpGenerator:
             print(f"Generate permuted file: {output_permuted_file}, rank: {rank}")
 
             # Create output file
-            with open(output_permuted_file, 'w', encoding="UTF-8") as f:
+            with open(output_permuted_file, 'w', encoding="utf-8") as f:
                 json.dump(data_json, f)
 
     @staticmethod
@@ -497,7 +497,7 @@ class CcmMilpGenerator:
     @staticmethod
     def output_dir(output_dirname: str = "output") -> str:
         """Get and create output dir"""
-        output_dir = os.path.join(os.path.dirname(__file__), '../..', output_dirname)
+        output_dir = os.path.join(os.path.dirname(__file__), "../..", output_dirname)
         if os.path.isdir(output_dir) is False:
             os.mkdir(output_dir)
 

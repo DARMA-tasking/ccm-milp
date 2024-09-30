@@ -74,15 +74,15 @@ def run_batch(file_name: str, solver_name: str):
 def main():
     """Main"""
     # Init
-    default_mps = os.path.join(os.path.dirname(__file__), 'problem.mps')
+    default_mps = os.path.join(os.path.dirname(__file__), "problem.mps")
 
     # Manage options
     parser = argparse.ArgumentParser(
-        prog='CCM-MILP Solver',
-        description='Generate & solve a problem'
+        prog="CCM-MILP Solver",
+        description="Generate & solve a problem"
     )
-    parser.add_argument('-p', '--problem', help='The problem.mps file', default=default_mps)
-    parser.add_argument('-s', '--solver', help="The problem solver", default='PULP_CBC_CMD')
+    parser.add_argument("-p", "--problem", help="The problem.mps file", default=default_mps)
+    parser.add_argument("-s", "--solver", help="The problem solver", default="PULP_CBC_CMD")
 
     # Get options
     args = parser.parse_args()

@@ -36,77 +36,77 @@ class TestExamples(unittest.TestCase):
                     print("-----------------------------------------")
 
                     # run ccm_milp_problem for example
-                    config_file = os.path.join(self.config_dir, test_config.get('file'))
-                    self.assertTrue(os.path.isfile(config_file), f'File: {config_file} does not exist!')
+                    config_file = os.path.join(self.config_dir, test_config.get("file"))
+                    self.assertTrue(os.path.isfile(config_file), f"File: {config_file} does not exist!")
 
-                    print('  Config file: ', test_config.get('file'))
-                    print('  ----------------')
-                    print('')
+                    print("  Config file: ", test_config.get("file"))
+                    print("  ----------------")
+                    print("")
 
-                    print('  Generate problem')
-                    print('  ----------------')
-                    print('')
+                    print("  Generate problem")
+                    print("  ----------------")
+                    print("")
 
                     subprocess.run([
-                        'python',
-                        os.path.join(self.src_dir, 'ccm_milp_problem.py'),
-                        '-c',
+                        "python",
+                        os.path.join(self.src_dir, "ccm_milp_problem.py"),
+                        "-c",
                         config_file
                     ], check=True)
 
                     # # Check problem file was generated
-                    lp_file = os.path.join(self.src_dir, 'problem.lp')
-                    self.assertTrue(os.path.isfile(lp_file), f'File: {lp_file} does not exist!')
-                    mps_file = os.path.join(self.src_dir, 'problem.mps')
-                    self.assertTrue(os.path.isfile(mps_file), f'File: {mps_file} does not exist!')
+                    lp_file = os.path.join(self.src_dir, "problem.lp")
+                    self.assertTrue(os.path.isfile(lp_file), f"File: {lp_file} does not exist!")
+                    mps_file = os.path.join(self.src_dir, "problem.mps")
+                    self.assertTrue(os.path.isfile(mps_file), f"File: {mps_file} does not exist!")
 
-                    print('')
-                    print('  Solve problem')
-                    print('  ----------------')
+                    print("")
+                    print("  Solve problem")
+                    print("  ----------------")
 
                     # For each solver available
                     for solver_name in pulp.listSolvers(onlyAvailable=True):
-                        print('')
-                        print(f'    {solver_name}')
-                        print('    ----------------')
+                        print("")
+                        print(f"    {solver_name}")
+                        print("    ----------------")
 
                         # Run the solver on the example problem
                         subprocess.run([
-                            'python',
-                            os.path.join(self.src_dir, 'ccm_milp_solver.py'),
-                            '-s',
+                            "python",
+                            os.path.join(self.src_dir, "ccm_milp_solver.py"),
+                            "-s",
                             solver_name
                         ], check = True)
 
                         # clear useless generated files
-                        mps_sol_file = os.path.join(self.root_dir, 'CCM_MILP-pulp.mps')
-                        lp_sol_file = os.path.join(self.root_dir, 'CCM_MILP-pulp.lp')
+                        mps_sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.mps")
+                        lp_sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.lp")
                         if os.path.isfile(mps_sol_file):
                             os.remove(mps_sol_file)
                         if os.path.isfile(lp_sol_file):
                             os.remove(lp_sol_file)
 
                         # Check sol file
-                        sol_file = os.path.join(self.root_dir, 'CCM_MILP-pulp.sol')
-                        self.assertTrue(os.path.isfile(sol_file), f'File: {sol_file} does not exist!')
+                        sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.sol")
+                        self.assertTrue(os.path.isfile(sol_file), f"File: {sol_file} does not exist!")
 
                         # Readd the sol file content
-                        output_str = ''
+                        output_str = ""
                         with open(sol_file, 'r', encoding="utf-8") as sol_content:
                             output_str = sol_content.read()
                         print(output_str)
 
                         # Check sol file content
                         found = False
-                        for reg in test_config.get('regexp'):
+                        for reg in test_config.get("regexp"):
                             if reg in output_str:
                                 print(f"Found {reg}")
                                 found = True
 
                         # No Regexp found
                         if found is False:
-                            for reg in test_config.get('regexp'):
-                                self.fail('Regex: not found in .sol')
+                            for reg in test_config.get("regexp"):
+                                self.fail("Regex: not found in .sol")
 
                         # clear .sol file
                         os.remove(sol_file)
@@ -126,21 +126,21 @@ class TestExamples(unittest.TestCase):
         permutation_file   = os.path.join(self.config_dir, "permutation.json")
 
         # Test all files exists
-        self.assertTrue(os.path.isfile(permutation_file), f'File: {permutation_file} does not exist!')
+        self.assertTrue(os.path.isfile(permutation_file), f"File: {permutation_file} does not exist!")
         for input_json_file in synthetic_example.json:
-            self.assertTrue(os.path.isfile(input_json_file), f'File: {input_json_file} does not exist!')
+            self.assertTrue(os.path.isfile(input_json_file), f"File: {input_json_file} does not exist!")
 
         # Command line
         subprocess.run([
-            'python',
-            os.path.join(self.src_dir, 'ccm_milp_permute_json.py'),
+            "python",
+            os.path.join(self.src_dir, "ccm_milp_permute_json.py"),
             "--permutation-file=" + permutation_file,
             "--input-json-files=" + " ".join(synthetic_example.json),
             "--output-file-prefix=" + output_file_prefix
         ], check=True)
 
         permutations = []
-        with open(permutation_file, 'r', encoding="UTF-8") as f:
+        with open(permutation_file, 'r', encoding="utf-8") as f:
             permutations = json.load(f)
 
         tasks_by_rank = {}
@@ -161,17 +161,17 @@ class TestExamples(unittest.TestCase):
         # Check files exists
         for output_json_file in output_json_files:
             # Check file exists
-            self.assertTrue(os.path.isfile(output_json_file), f'File: {output_json_file} does not exist!')
+            self.assertTrue(os.path.isfile(output_json_file), f"File: {output_json_file} does not exist!")
 
             # Get the rank from filename
             rank: int = -1
-            if len(output_json_file.split('.')) > 1:
-                split_output_json_filename =  output_json_file.split('.')
+            if len(output_json_file.split(".")) > 1:
+                split_output_json_filename =  output_json_file.split(".")
                 rank = int(split_output_json_filename[len(split_output_json_filename) - 2])
 
             # Load output json
             output_json = {}
-            with open(output_json_file, 'r', encoding="UTF-8") as f:
+            with open(output_json_file, 'r', encoding="utf-8") as f:
                 output_json = json.load(f)
 
             # Get the number of tasks expected for the rank
@@ -181,7 +181,7 @@ class TestExamples(unittest.TestCase):
             print(f"Rank {rank} expected {tasks_by_rank[rank]} task(s), found {number_of_tasks}" )
             self.assertTrue(
                 len(output_json["phases"][1]["tasks"]) == tasks_by_rank[rank],
-                f'File: {output_json_file} does not exist!'
+                f"File: {output_json_file} does not exist!"
             )
 
             # CLean generated files
@@ -260,5 +260,5 @@ class TestExamples(unittest.TestCase):
     def tearDown(self):
         return
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
