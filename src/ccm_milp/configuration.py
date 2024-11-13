@@ -54,8 +54,8 @@ class Config:
         beta: float,
         gamma: float,
         delta: float,
-        bounded_memory:bool,
-        preserve_clusters:bool
+        bounded_memory: bool,
+        preserve_clusters: bool,
     ):
         print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
         print(f"  alpha = {alpha}")
