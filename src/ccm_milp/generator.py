@@ -469,7 +469,7 @@ class CcmMilpGenerator:
                 json.dump(data_json, f)
 
     @staticmethod
-    def parse_json(data_files: list) -> Data:
+    def parse_json(data_files: list, rank_memory_bound : float) -> Data:
         """Parse json data files to python"""
         # Permute sorted data
         def sort_func(filepath):
@@ -478,7 +478,8 @@ class CcmMilpGenerator:
         data_files.sort(key=sort_func)
 
         data = Data()
-        data.parse_json(data_files)
+        data.mems = rank_memory_bound
+        data.parse_json(data_files, rank_memory_bound)
         return data
 
     @staticmethod

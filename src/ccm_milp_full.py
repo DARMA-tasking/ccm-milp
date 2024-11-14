@@ -34,6 +34,7 @@
 #
 
 import os
+import re
 import argparse
 import importlib
 import sys
@@ -91,22 +92,24 @@ def run_batch(file_name: str):
 
     # Parse parameters
     print("# Model configuration:")
-    c_float, c_bool, ccm_example = {}, {}, None
+    c_float, c_bool, ccm_example, file_stem = {}, {}, None, ""
     for k, v in parameters.items():
         print(f"  {k}: {v}")
-        if k in ("alpha", "beta", "gamma", "delta"):
+        if k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
             c_float[k] = float(v)
         elif k in ("is_fwmp", "bounded_memory", "preserve_clusters"):
             c_bool[k] = bool(v)
         elif k == "example_id":
             ccm_example = avail_examples[int(v)]
+        elif k in ("file_stem"):
+            file_stem = str(v)
         else:
             print ("*** Incorrect key:", k)
             sys.exit(1)
 
     # Retrieve and return problem configuration
-    if not ccm_example:
-        print ("*** No CCM example was defined")
+    if not ccm_example and file_stem == "":
+        print ("*** No CCM example was defined or file_stem provided")
         sys.exit(1)
 
     return [
@@ -117,8 +120,25 @@ def run_batch(file_name: str):
         c_float.get("gamma", DEFAULT_PARAMS.gamma),
         c_float.get("delta", DEFAULT_PARAMS.delta),
         c_bool.get("bounded_memory", False),
-        c_bool.get("preserve_clusters", False)
+        c_bool.get("preserve_clusters", False),
+        c_float.get("rank_memory_bound", 0.0),
+        file_stem
     ]
+
+def get_num_ranks(file_prefix : str, file_suffix : str) -> int:
+    data_dir = f"{os.sep}".join(file_prefix.split(os.sep)[:-1])
+    pattern = re.compile(rf"^{file_prefix}.(\d+).{file_suffix}$")
+    highest_rank = 0
+    for name in os.listdir(data_dir):
+        path = os.path.join(data_dir, name)
+        match_result = pattern.search(path)
+        if match_result:
+            rank_id = int(match_result.group(1))
+            highest_rank = max(highest_rank, rank_id)
+    return highest_rank + 1
+
+def get_rank_file_name(file_prefix : str, file_suffix : str, rank_id : int):
+    return f"{file_prefix}.{rank_id}.{file_suffix}"
 
 def main():
     """Run with interactive selection of example"""
@@ -138,14 +158,20 @@ def main():
 
     # Retrieve parameters either interactively or in batch mode
     if file_name:
-        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl = run_batch(file_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl, mem_bound, file_stem = run_batch(file_name)
     else:
         ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
 
     # Manage avialable example with json
     data = None
-    if len(ccm_example.json) > 0:
+    if ccm_example is not None and len(ccm_example.json) > 0:
         data = CcmMilpGenerator.parse_json(ccm_example.json)
+    elif file_stem != "":
+        n_ranks = get_num_ranks(file_stem, "json")
+        print(f"Number of ranks detected as {n_ranks}")
+        files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
+        # print(f"Files={files}")
+        data = CcmMilpGenerator.parse_json(files, mem_bound)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
