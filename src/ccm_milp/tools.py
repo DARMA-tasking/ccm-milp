@@ -44,7 +44,7 @@ class Tools:
         return getattr(importlib.import_module(module, classname), classname)
 
     @staticmethod
-    def input_float(input_name: str, indent: str = "  ", default: float = 0.0):
+    def input_float(input_name: str, default: float = 0.0, indent: str = "  "):
         """ Interactively retrieve input with float type. """
         value = input(f"{indent}value of {input_name} [{default}]? ")
         if not value:

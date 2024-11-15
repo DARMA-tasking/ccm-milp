@@ -42,7 +42,7 @@ import yaml
 
 # Import classes
 from ccm_milp.configuration import Config, DefaultParameters
-from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.generator import Generator
 from ccm_milp.tools import Tools
 
 # Add global path
@@ -143,10 +143,10 @@ def main():
         ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
 
     # Build and save linear program
-    ccm_milp_generator = CcmMilpGenerator(
+    ccm_milp_generator = Generator(
         Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl),
-        getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
-    )
+        getattr(
+            importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)())
 
     # Generate the problem and it"s files
     ccm_milp_generator.generate_problem()

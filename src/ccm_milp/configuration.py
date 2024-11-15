@@ -33,36 +33,42 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import math
+import sys
 from dataclasses import dataclass
 
 @dataclass
-class Config:
-    """Config object"""
+class Configuration:
+    """Configuration object"""
     is_fmwp: bool
     is_comcp: bool
     alpha: float
     beta: float
     gamma: float
     delta: float
-    bounded_memory: bool
+    rank_memory_bound: float
+    node_memory_bound: float
     preserve_clusters: bool
 
     def __init__(
-        self,
-        is_fmwp: bool,
-        alpha: float,
-        beta: float,
-        gamma: float,
-        delta: float,
-        bounded_memory: bool,
-        preserve_clusters: bool,
-    ):
+            self,
+            is_fmwp: bool,
+            alpha: float,
+            beta: float,
+            gamma: float,
+            delta: float,
+            rank_memory_bound: float,
+            node_memory_bound: float,
+            preserve_clusters: bool):
         print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
         print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
         print(f"  gamma = {gamma}")
         print(f"  delta = {delta}")
-        print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
+        if rank_memory_bound < math.inf:
+            print(f"  rank memory bound = {rank_memory_bound}")
+        if node_memory_bound < math.inf:
+            print(f"  node memory bound = {node_memory_bound}")
         if preserve_clusters:
             print("  while preserving block clusters")
         self.is_fmwp = is_fmwp
@@ -71,7 +77,8 @@ class Config:
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
-        self.bounded_memory = bounded_memory
+        self.rank_memory_bound = rank_memory_bound
+        self.node_memory_bound = node_memory_bound
         self.preserve_clusters = preserve_clusters
 
 @dataclass
@@ -81,3 +88,5 @@ class DefaultParameters:
     beta: float = 0.0
     gamma: float = 0.0
     delta: float = 0.0
+    rank_memory_bound: float = math.inf
+    node_memory_bound: float = math.inf

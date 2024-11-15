@@ -35,8 +35,7 @@
 
 import argparse
 import sys
-
-from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.generator import Generator
 
 # Globales variables
 file_separator: str = ' '
@@ -47,7 +46,7 @@ def run_batch(file_input_json_files: str):
     datafiles = file_input_json_files.split(file_separator)
 
     # Call permute function
-    CcmMilpGenerator.parse_json(data_files = datafiles)
+    Generator.parse_json(data_files = datafiles)
 
 def main():
     """Main"""
@@ -55,9 +54,7 @@ def main():
     # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP parse json",
-        description="Parse json data to a python class oused by problem solver"
-    )
-
+        description="Parse json data to a python class oused by problem solver")
     parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
 
     # Get options

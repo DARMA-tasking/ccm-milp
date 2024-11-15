@@ -36,7 +36,7 @@
 import argparse
 import sys
 
-from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.generator import Generator
 
 # Globales variables
 file_separator: str = ' '
@@ -47,7 +47,7 @@ def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: st
     datafiles = file_input_json_files.split(file_separator)
 
     # Call permute function
-    CcmMilpGenerator.permute(
+    Generator.permute(
         permutation_file = permutation_file,
         data_files = datafiles,
         file_prefix = file_prefix

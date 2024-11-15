@@ -37,21 +37,25 @@ import os
 import re
 import argparse
 import importlib
+import math
 import sys
-from typing import Final
 import yaml
+from typing import Final
 
 # Import classes
-from ccm_milp.configuration import Config, DefaultParameters
-from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.configuration import Configuration, DefaultParameters
+from ccm_milp.generator import Generator
 from ccm_milp.tools import Tools
 
 # Add global path
 sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../..")))
 Examples = Tools.import_class("examples.configuration", "Examples")
 
-avail_examples = Examples.list() # Available CCM-MILP examples
-DEFAULT_PARAMS: Final = DefaultParameters() # Default CCM parameter values
+# Available CCM-MILP examples
+avail_examples = Examples.list() 
+
+# Default CCM parameter values
+DP: Final = DefaultParameters()
 
 def run_interactive():
     """Run with interactive selection of example"""
@@ -67,16 +71,21 @@ def run_interactive():
 
     # Interactively get and return problem configuration
     print("\n# Model configuration:")
+    if (is_fwmp := (input("  FWMP [y/N]? ") == "y")):
+        alpha = Tools.input_float("alpha")
+        beta  = Tools.input_float("beta")
+        gamma = Tools.input_float("gamma")
+        delta = Tools.input_float("delta")
+    else:
+        alpha, beta, gamma, delta = DP.alpha, DP.beta, DP.gamma, DP.delta
+    rank_memory_bound = Tools.input_float("rank memory bound", math.inf)
+    if rank_memory_bound == math.inf:
+        node_memory_bound = Tools.input_float("node memory bound", math.inf)
     return [
         avail_examples[example_id],
-        is_fwmp := (input("  FWMP [y/N]? ") == "y"),
-        Tools.input_float("alpha") if is_fwmp else DEFAULT_PARAMS.alpha,
-        Tools.input_float("beta") if is_fwmp else DEFAULT_PARAMS.beta,
-        Tools.input_float("gamma") if is_fwmp else DEFAULT_PARAMS.gamma,
-        Tools.input_float("delta") if is_fwmp else DEFAULT_PARAMS.delta,
-        input("  bounded memory [y/N]? ") == "y",
-        input("  preserve clusters [y/N]? ") == "y"
-    ]
+        is_fwmp, alpha, beta, gamma, delta,
+        rank_memory_bound, node_memory_bound,
+        input("  preserve clusters [y/N]? ") == "y"]
 
 def run_batch(file_name: str):
     """Run with a config file"""
@@ -95,10 +104,10 @@ def run_batch(file_name: str):
     c_float, c_bool, ccm_example, file_stem = {}, {}, None, ""
     for k, v in parameters.items():
         print(f"  {k}: {v}")
-        if k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
-            c_float[k] = float(v)
-        elif k in ("is_fwmp", "bounded_memory", "preserve_clusters"):
+        if k in ("is_fwmp", "bounded_memory", "preserve_clusters"):
             c_bool[k] = bool(v)
+        elif k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
+            c_float[k] = float(v)
         elif k == "example_id":
             ccm_example = avail_examples[int(v)]
         elif k in ("file_stem"):
@@ -115,13 +124,13 @@ def run_batch(file_name: str):
     return [
         ccm_example,
         c_bool.get("is_fwmp", False),
-        c_float.get("alpha", DEFAULT_PARAMS.alpha),
-        c_float.get("beta", DEFAULT_PARAMS.beta),
-        c_float.get("gamma", DEFAULT_PARAMS.gamma),
-        c_float.get("delta", DEFAULT_PARAMS.delta),
+        c_float.get("alpha", DP.alpha),
+        c_float.get("beta", DP.beta),
+        c_float.get("gamma", DP.gamma),
+        c_float.get("delta", DP.delta),
         c_bool.get("bounded_memory", False),
+        c_float.get("rank_memory_bound", math.inf),
         c_bool.get("preserve_clusters", False),
-        c_float.get("rank_memory_bound", 0.0),
         file_stem
     ]
 
@@ -158,25 +167,28 @@ def main():
 
     # Retrieve parameters either interactively or in batch mode
     if file_name:
-        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl, mem_bound, file_stem = run_batch(file_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, file_stem = run_batch(file_name)
     else:
-        ccm_example, fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl  = run_interactive()
+        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl = run_interactive()
+        file_stem = ''
 
-    # Manage avialable example with json
+    # Manage available example with json
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
-        data = CcmMilpGenerator.parse_json(ccm_example.json)
-    elif file_stem != "":
+        data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd)
+    elif file_stem != '':
         n_ranks = get_num_ranks(file_stem, "json")
-        print(f"Number of ranks detected as {n_ranks}")
+        print(f"# Number of detected ranks: {n_ranks}")
         files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
         # print(f"Files={files}")
-        data = CcmMilpGenerator.parse_json(files, mem_bound)
+        data = Generator.parse_json(files, rank_mem_bnd, node_mem_bnd)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
     # Build and save linear program
-    ccm_milp_generator = CcmMilpGenerator(Config(fwmp, alpha, beta, gamma, delta, bnd_mem, pr_cl), data)
+    ccm_milp_generator = Generator(
+        Configuration(fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl),
+        data)
     ccm_milp_generator.generate_problem_and_solve(solver_name)
 
     # Report solution to linear program when found
@@ -186,8 +198,8 @@ def main():
 
     if len(ccm_example.json) > 0:
         # Call permute function
-        CcmMilpGenerator.permute(
-            permutation_file = os.path.join(CcmMilpGenerator.output_dir(), permutation_file),
+        Generator.permute(
+            permutation_file = os.path.join(Generator.output_dir(), permutation_file),
             data_files = ccm_example.json,
             file_prefix="permuted_"
         )

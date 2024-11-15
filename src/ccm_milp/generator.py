@@ -37,14 +37,14 @@ import time
 import os
 import json
 import pulp
-
-from .configuration import Config
+import math
+from .configuration import Configuration
 from .data import Data
 
-class CcmMilpGenerator:
+class Generator:
     """Manage CCM-MILP problem - Setup, Generate and Solve"""
 
-    def __init__(self, configuration : Config, input_problem):
+    def __init__(self, configuration : Configuration, input_problem):
         print(f"\n# Instantiating {type(input_problem).__name__} problem")
 
         self.config = configuration
@@ -258,7 +258,7 @@ class CcmMilpGenerator:
         print(f"Added shared blocks constraints in {end_time - start_time:0.4f}s")
 
         # Include memory constraints when requested
-        if self.config.bounded_memory:
+        if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
             all_k_working_bytes_zero = True
             for i in range(self.k):
@@ -460,7 +460,7 @@ class CcmMilpGenerator:
 
             # Create output filename
             output_permuted_filename = file_prefix + data_file.split("/").pop()
-            output_permuted_file = os.path.join(CcmMilpGenerator.output_dir(), output_permuted_filename)
+            output_permuted_file = os.path.join(Generator.output_dir(), output_permuted_filename)
 
             print(f"Generate permuted file: {output_permuted_file}, rank: {rank}")
 
@@ -469,7 +469,7 @@ class CcmMilpGenerator:
                 json.dump(data_json, f)
 
     @staticmethod
-    def parse_json(data_files: list, rank_memory_bound : float) -> Data:
+    def parse_json(data_files: list, rank_mem_bnd: float, node_mem_bnd: float) -> Data:
         """Parse json data files to python"""
         # Permute sorted data
         def sort_func(filepath):
@@ -477,9 +477,9 @@ class CcmMilpGenerator:
             return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
         data_files.sort(key=sort_func)
 
-        data = Data()
-        data.mems = rank_memory_bound
-        data.parse_json(data_files, rank_memory_bound)
+        # Initialize and populate data object
+        data = Data(rank_mem_bnd, node_mem_bnd)
+        data.parse_json(data_files)
         return data
 
     @staticmethod
