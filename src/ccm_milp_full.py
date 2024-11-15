@@ -128,8 +128,8 @@ def run_batch(file_name: str):
         c_float.get("beta", DP.beta),
         c_float.get("gamma", DP.gamma),
         c_float.get("delta", DP.delta),
-        c_bool.get("bounded_memory", False),
-        c_float.get("rank_memory_bound", math.inf),
+        c_float.get("rank_memory_bound", DP.rank_memory_bound),
+        c_float.get("node_memory_bound", DP.node_memory_bound),
         c_bool.get("preserve_clusters", False),
         file_stem
     ]
