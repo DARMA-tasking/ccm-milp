@@ -85,7 +85,8 @@ def run_interactive():
         avail_examples[example_id],
         is_fwmp, alpha, beta, gamma, delta,
         rank_memory_bound, node_memory_bound,
-        input("  preserve clusters [y/N]? ") == "y"]
+        input("  preserve clusters [y/N]? ") == "y",
+        input("  verbose output [y/N]? ") == "y"]
 
 def run_batch(file_name: str):
     """Run with a config file"""
@@ -104,7 +105,7 @@ def run_batch(file_name: str):
     c_float, c_bool, ccm_example, file_stem = {}, {}, None, ""
     for k, v in parameters.items():
         print(f"  {k}: {v}")
-        if k in ("is_fwmp", "bounded_memory", "preserve_clusters"):
+        if k in ("is_fwmp", "bounded_memory", "preserve_clusters", "verbose"):
             c_bool[k] = bool(v)
         elif k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
             c_float[k] = float(v)
@@ -131,6 +132,7 @@ def run_batch(file_name: str):
         c_float.get("rank_memory_bound", DP.rank_memory_bound),
         c_float.get("node_memory_bound", DP.node_memory_bound),
         c_bool.get("preserve_clusters", False),
+        c_bool.get("verbose", False),
         file_stem
     ]
 
@@ -167,21 +169,21 @@ def main():
 
     # Retrieve parameters either interactively or in batch mode
     if file_name:
-        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, file_stem = run_batch(file_name)
+        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose, file_stem = run_batch(file_name)
     else:
-        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl = run_interactive()
+        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose = run_interactive()
         file_stem = ''
 
     # Manage available example with JSPN
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
-        data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd)
+        data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd, verbose)
     elif file_stem != '':
         n_ranks = get_num_ranks(file_stem, "json")
         print(f"# Number of detected ranks: {n_ranks}")
         files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
         # print(f"Files={files}")
-        data = Generator.parse_json(files, rank_mem_bnd, node_mem_bnd)
+        data = Generator.parse_json(files, rank_mem_bnd, node_mem_bnd, verbose)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 

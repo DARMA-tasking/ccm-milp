@@ -44,10 +44,9 @@ from .data import Data
 class Generator:
     """Manage CCM-MILP problem - Setup, Generate and Solve"""
 
-    def __init__(self, configuration : Configuration, input_problem):
+    def __init__(self, config: Configuration, input_problem):
         print(f"\n# Instantiating {type(input_problem).__name__} problem")
-
-        self.config = configuration
+        self.config = config
         self.rank_mems = input_problem.rank_mems
         self.rank_working_bytes = input_problem.rank_working_bytes
         self.task_loads = input_problem.task_loads
@@ -469,7 +468,7 @@ class Generator:
                 json.dump(data_json, f)
 
     @staticmethod
-    def parse_json(data_files: list, rank_mem_bnd: float, node_mem_bnd: float) -> Data:
+    def parse_json(data_files: list, rank_mem_bnd: float, node_mem_bnd: float, verbose=False) -> Data:
         """Parse json data files to python"""
         # Permute sorted data
         def sort_func(filepath):
@@ -482,7 +481,7 @@ class Generator:
         for df in data_files:
             print(f"  {df}")
         data = Data(rank_mem_bnd, node_mem_bnd)
-        data.parse_json(data_files)
+        data.parse_json(data_files, verbose)
         return data
 
     @staticmethod

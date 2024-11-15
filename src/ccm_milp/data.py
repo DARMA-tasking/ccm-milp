@@ -36,8 +36,6 @@
 import json
 import math
 
-verbose = True
-
 class Data:
     """Data file class used after parsing json data files"""
 
@@ -56,7 +54,7 @@ class Data:
         self.task_memory_block_mapping = None
         self.task_communications = None
 
-    def parse_json(self, data_files: list):
+    def parse_json(self, data_files: list, verbose: bool):
         """Parse JSON data files"""
         tasks  = []
         tasks_working_bytes = []
