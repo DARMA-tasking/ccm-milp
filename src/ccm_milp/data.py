@@ -64,9 +64,9 @@ class Data:
         task_indices  = []
         task_rank_obj_id  = []
         tasks_rank  = []
-        task_shared_id_map = {}
-        shared_id_map = {}
-        shared_id_home  = {}
+        task_shared_block_id_map = {}
+        shared_block_id_map = {}
+        shared_block_id_home  = {}
         task_id = 0
         ranks = {}
         comunications = []
@@ -99,7 +99,7 @@ class Data:
                         obj_id = task.get("entity").get("id")
                         if task.get("user_defined") is None:
                             continue
-                        shared_id = task.get("user_defined").get("shared_id")
+                        shared_block_id = task.get("user_defined").get("shared_block_id")
                         shared_bytes = task.get("user_defined").get("shared_bytes")
                         task_working_bytes = task.get("user_defined").get("task_working_bytes", 0)
                         task_footprint_bytes = task.get("user_defined").get("task_footprint_bytes", 0)
@@ -107,23 +107,23 @@ class Data:
 
                         # Set data
                         ranks[rank] = rank_working_bytes
-                        shared_id_map[shared_id] = shared_bytes
-                        shared_id_home[shared_id] = rank
+                        shared_block_id_map[shared_block_id] = shared_bytes
+                        shared_block_id_home[shared_block_id] = rank
                         tasks.append(time)
                         tasks_footprint_bytes.append(task_footprint_bytes)
                         tasks_working_bytes.append(task_working_bytes)
                         task_indices.append(index)
                         tasks_rank.append( rank)
                         task_rank_obj_id.append(obj_id)
-                        if shared_id not in task_shared_id_map:
-                            task_shared_id_map[shared_id] = []
-                        task_shared_id_map[shared_id].append(task_id)
+                        if shared_block_id not in task_shared_block_id_map:
+                            task_shared_block_id_map[shared_block_id] = []
+                        task_shared_block_id_map[shared_block_id].append(task_id)
                         total_load += time
 
                         # Manage counter
                         task_id += 1
 
-                # Manage Communications data
+                # Manage communication data
                 if "communications" in data_json["phases"][0]:
                     for com in data_json["phases"][0]["communications"]:
                         comunications.append([
@@ -145,11 +145,11 @@ class Data:
         self.task_id.sort()
 
         # Initialize shared memory blocks
-        self.memory_blocks = list(shared_id_map.values())
+        self.memory_blocks = list(shared_block_id_map.values())
         self.memory_blocks.sort()
-        self.memory_block_home = list(shared_id_home.values())
+        self.memory_block_home = list(shared_block_id_home.values())
         self.memory_block_home.sort()
-        self.task_memory_block_mapping = list(task_shared_id_map.values())
+        self.task_memory_block_mapping = list(task_shared_block_id_map.values())
         self.task_memory_block_mapping.sort()
 
         # Initialize communications
@@ -157,14 +157,15 @@ class Data:
 
         #  Print data object
         if verbose:
-            print(f"rank_mems:                 {self.rank_mems}")
-            print(f"rank_working_bytes:        {self.rank_working_bytes}")
-            print(f"task_loads:                {self.task_loads}")
-            print(f"task_working_bytes:        {self.task_working_bytes}")
-            print(f"task_footprint_bytes:      {self.task_footprint_bytes}")
-            print(f"task_rank:                 {self.task_rank}")
-            print(f"task_id:                   {self.task_id}")
-            print(f"memory_blocks:             {self.memory_blocks}")
-            print(f"memory_block_home:         {self.memory_block_home}")
-            print(f"task_memory_block_mapping: {self.task_memory_block_mapping}")
-            print(f"task_communications:       {self.task_communications}")
+            print("\n#  Data object:")
+            print(f"   rank_mems:                 {self.rank_mems}")
+            print(f"   rank_working_bytes:        {self.rank_working_bytes}")
+            print(f"   task_loads:                {self.task_loads}")
+            print(f"   task_working_bytes:        {self.task_working_bytes}")
+            print(f"   task_footprint_bytes:      {self.task_footprint_bytes}")
+            print(f"   task_rank:                 {self.task_rank}")
+            print(f"   task_id:                   {self.task_id}")
+            print(f"   memory_blocks:             {self.memory_blocks}")
+            print(f"   memory_block_home:         {self.memory_block_home}")
+            print(f"   task_memory_block_mapping: {self.task_memory_block_mapping}")
+            print(f"   task_communications:       {self.task_communications}")
