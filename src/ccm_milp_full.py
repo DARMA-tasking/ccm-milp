@@ -117,7 +117,7 @@ def run_batch(file_name: str):
             sys.exit(1)
 
     # Retrieve and return problem configuration
-    if not ccm_example and file_stem == "":
+    if not ccm_example and file_stem == '':
         print ("*** No CCM example was defined or file_stem provided")
         sys.exit(1)
 
@@ -172,7 +172,7 @@ def main():
         ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl = run_interactive()
         file_stem = ''
 
-    # Manage available example with json
+    # Manage available example with JSPN
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
         data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd)

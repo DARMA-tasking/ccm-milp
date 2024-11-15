@@ -478,6 +478,9 @@ class Generator:
         data_files.sort(key=sort_func)
 
         # Initialize and populate data object
+        print("\n# Data files:")
+        for df in data_files:
+            print(f"  {df}")
         data = Data(rank_mem_bnd, node_mem_bnd)
         data.parse_json(data_files)
         return data
