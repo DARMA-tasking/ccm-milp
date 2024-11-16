@@ -78,13 +78,11 @@ def run_interactive():
         delta = Tools.input_float("delta")
     else:
         alpha, beta, gamma, delta = DP.alpha, DP.beta, DP.gamma, DP.delta
-    rank_memory_bound = Tools.input_float("rank memory bound", math.inf)
-    if rank_memory_bound == math.inf:
-        node_memory_bound = Tools.input_float("node memory bound", math.inf)
     return [
         avail_examples[example_id],
         is_fwmp, alpha, beta, gamma, delta,
-        rank_memory_bound, node_memory_bound,
+        Tools.input_float("rank memory bound", DP.rank_memory_bound),
+        Tools.input_float("node memory bound", DP.node_memory_bound),
         input("  preserve clusters [y/N]? ") == "y",
         input("  verbose output [y/N]? ") == "y"]
 
@@ -175,12 +173,13 @@ def main():
     # Manage available examples with JSON
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
+        # Retrieve data from set of predefined examples
         data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd, verbose)
     elif file_stem != '':
+        # Retrieve data from specified file stem
         n_ranks = get_num_ranks(file_stem, "json")
         print(f"# Number of detected ranks: {n_ranks}")
         files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
-        # print(f"Files={files}")
         data = Generator.parse_json(files, rank_mem_bnd, node_mem_bnd, verbose)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
