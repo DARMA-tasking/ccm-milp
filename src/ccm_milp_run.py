@@ -208,8 +208,8 @@ def main():
 
     else:
         # Generate only
-        print("\n# No LP solve requested")
         ccm_milp_generator.generate_problem()
+        print("\n# No LP solve requested")
 
 if __name__ == "__main__":
     main()

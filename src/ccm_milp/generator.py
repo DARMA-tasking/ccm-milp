@@ -45,7 +45,7 @@ class Generator:
     """Manage CCM-MILP problem: setup, generate, and solve"""
 
     def __init__(self, config: Configuration, input_problem):
-        print(f"\n# Instantiating {type(input_problem).__name__} problem")
+        print(f"\n# Generating {type(input_problem).__name__} linear problem")
         self.config = config
         self.rank_mems = input_problem.rank_mems
         self.rank_working_bytes = input_problem.rank_working_bytes
@@ -59,10 +59,18 @@ class Generator:
         self.task_memory_block_mapping = input_problem.task_memory_block_mapping
         self.task_communications = input_problem.task_communications
 
-        self.i = len(self.rank_mems) # i is the cardinality of set R
-        self.k = len(self.task_loads) # k is the cardinality of set T
-        self.m = len(self.task_communications) # m is the cardinality of set C
-        self.n = len(self.memory_blocks) # n is the cardinality of set S
+
+        # Cardinality of rank set R
+        self.I = len(self.rank_mems) # i is the 
+
+        # Cardinality of task set T
+        self.K = len(self.task_loads)
+
+        # Cardinality of communication set C
+        self.M = len(self.task_communications)
+
+        # Cardinality of shared block set S
+        self.N = len(self.memory_blocks)
 
         self.chi = None
         self.phi = None
@@ -71,14 +79,14 @@ class Generator:
 
         self.problem = None
 
-        print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.i}")
-        print(f"Ranks={self.i}, task_loads={self.k}, memory_blocks={self.n} comms={self.m}")
+        print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.I}")
+        print(f"Ranks={self.I}, task_loads={self.K}, memory_blocks={self.N} comms={self.M}")
 
     def generate_problem(self):
         """Generate the problem"""
         self.setup_milp()
         self.write_lp_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.lp"))
-        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.mps"))
+        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.Mps"))
 
     def generate_problem_and_solve(self, solver_name: str):
         """Generate the problem and solve it"""
@@ -124,16 +132,16 @@ class Generator:
         """Generate output report"""
         if self.problem.status == pulp.LpStatusOptimal:
             solution = {"w_max": pulp.value(self.w_max)}
-            machine_memory_blocks_assigned = [[] for i in range(self.i)]
+            machine_memory_blocks_assigned = [[] for i in range(self.I)]
             rank_totals = []
             total_unhomed_blocks = 0
 
             # Iterate over ranks
-            for i in range(self.i):
+            for i in range(self.I):
                 # Compute work for rank i
                 unhomed_blocks = 0
                 delta_cost = 0
-                for n in range(self.n):
+                for n in range(self.N):
                     if pulp.value(self.phi[i, n]) == 1:
                         machine_memory_blocks_assigned[i].append(n)
                         if i != self.memory_block_home[n]:
@@ -142,7 +150,7 @@ class Generator:
                 total_unhomed_blocks += unhomed_blocks
                 total_load = 0.0
                 total_work = delta_cost
-                for k in range(self.k):
+                for k in range(self.K):
                     if pulp.value(self.chi[i, k]) == 1:
                         solution[f"Task {k} of load {self.task_loads[k]}"
                             f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
@@ -154,9 +162,9 @@ class Generator:
                 if self.psi:
                     c_l, c_o, c_i = 0.0, 0.0, 0.0
                     # Iterate over ranks
-                    for j in range(self.i):
+                    for j in range(self.I):
                         # Check for communications between ranks i and j
-                        for m in range(self.m):
+                        for m in range(self.M):
                             # Distinguish local from global communications
                             if i == j:
                                 # Tally local communications
@@ -178,9 +186,9 @@ class Generator:
                 rank_totals.append((total_load, total_work, unhomed_blocks))
 
             # Compute assignment array of tasks to ranks
-            assignments = [-1] * self.k
-            for i in range(self.i):
-                for k in range(self.k):
+            assignments = [-1] * self.K
+            for i in range(self.I):
+                for k in range(self.K):
                     # Some solvers do not output a solution that is exactly 1 albeit binary
                     if pulp.value(self.chi[i, k]) > 0.5:
                         assignments[k] = i
@@ -197,7 +205,7 @@ class Generator:
                     print(key)
 
             print("\n# Solution summary:")
-            for i in range(self.i):
+            for i in range(self.I):
                 print(f"Rank {i}: "
                       f"L = {rank_totals[i][0]}, "
                       f"W = {rank_totals[i][1]}, "
@@ -213,19 +221,19 @@ class Generator:
         # instantiante LP minimization problem
         self.problem = pulp.LpProblem("CCM_MILP", pulp.LpMinimize)
 
-        # chi: ranks <- tasks, self.i x self.k, binary variables in MILP
-        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.i) for k in range(self.k)), cat="Binary")
+        # chi: ranks <- tasks, self.I x self.K, binary variables in MILP
+        self.chi = pulp.LpVariable.dicts("chi", ((i, k) for i in range(self.I) for k in range(self.K)), cat="Binary")
 
-        # phi: ranks <- shared blocks, self.i x self.n, binary variables in MILP
-        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.i) for n in range(self.n)), cat="Binary")
+        # phi: ranks <- shared blocks, self.I x self.N, binary variables in MILP
+        self.phi = pulp.LpVariable.dicts("phi", ((i, n) for i in range(self.I) for n in range(self.N)), cat="Binary")
 
-        # psi: ranks <- communications self.i x self.i x self.m, binary variables in MILP
+        # psi: ranks <- communications self.I x self.I x self.M, binary variables in MILP
         self.psi = {}
         if self.config.is_fmwp:
             self.psi = pulp.LpVariable.dicts("psi", ((i, j, m)
-                for i in range(self.i)
-                for j in range(self.i)
-                for m in range(self.m)
+                for i in range(self.I)
+                for j in range(self.I)
+                for m in range(self.M)
             ), cat="Binary")
 
         # w_max: continuous variable in MILP for work defined by CCM model
@@ -236,15 +244,15 @@ class Generator:
 
         # Add equation 14, constraining every task to a single rank:
         start_time = time.perf_counter()
-        for k in range(self.k):
-            self.problem += sum(self.chi[i, k] for i in range(self.i)) == 1
+        for k in range(self.K):
+            self.problem += sum(self.chi[i, k] for i in range(self.I)) == 1
         end_time = time.perf_counter()
         print(f"Added basic constraints in {end_time - start_time:0.4f}s")
 
         # Add equations 17 and 18 for shared block constraints
         start_time = time.perf_counter()
-        for i in range(self.i):
-            for n in range(self.n):
+        for i in range(self.I):
+            for n in range(self.N):
                 for p in range(len(self.task_memory_block_mapping[n])):
                     # Add equation 17
                     self.problem += self.phi[i, n] >= self.chi[i, self.task_memory_block_mapping[n][p]]
@@ -261,23 +269,23 @@ class Generator:
         if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
             all_k_working_bytes_zero = True
-            for i in range(self.k):
+            for i in range(self.K):
                 if self.task_working_bytes[i] != 0:
                     all_k_working_bytes_zero = False
-            for i in range(self.i):
+            for i in range(self.I):
                 if all_k_working_bytes_zero:
                     # Add equation 19
                     self.problem += (
-                        sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.k)) +
-                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.n))
+                        sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.K)) +
+                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                     ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
                 else:
-                    for k in range(self.k):
+                    for k in range(self.K):
                         # Add equation 19
                         self.problem += (
-                            sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.k)) +
+                            sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.K)) +
                             self.task_working_bytes[k] * self.chi[i, k] +
-                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.n))
+                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                         ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
             end_time = time.perf_counter()
             print(f"Added memory constraints in {end_time - start_time:0.4f}s")
@@ -285,8 +293,8 @@ class Generator:
         # Add communication constraints in full model case
         if self.config.is_fmwp:
             start_time = time.perf_counter()
-            for i in range(self.i):
-                for j in range(self.i):
+            for i in range(self.I):
+                for j in range(self.I):
                     for p,_ in enumerate(self.task_communications): #for p in range(len(self.task_communications)):
                         # Add equation 25
                         self.problem += self.psi[i, j, p] <= self.chi[i, self.task_communications[p][0]]
@@ -303,20 +311,20 @@ class Generator:
         # Add continuous constraints
         start_time = time.perf_counter()
         if self.config.is_comcp:
-            for i in range(self.i):
+            for i in range(self.I):
                 # Add equation 20
-                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.k)) <= self.w_max
+                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
         elif self.config.is_fmwp:
-            for i in range(self.i):
+            for i in range(self.I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
-                remote_blocks = [n for n in range(self.n) if self.memory_block_home[n] != i]
+                remote_blocks = [n for n in range(self.N) if self.memory_block_home[n] != i]
 
                 # For rank i, build a list of all the other machines (all but i) for the second term of equation 30
-                other_machines = [j for j in range(self.i) if j != i]
+                other_machines = [j for j in range(self.I) if j != i]
 
                 # Compute unchanging terms in equation 30
                 alpha_term = self.config.alpha * sum(
-                    self.task_loads[k] * self.chi[i, k] for k in range(self.k))
+                    self.task_loads[k] * self.chi[i, k] for k in range(self.K))
                 gamma_term = self.config.gamma * sum(
                     self.psi[i, i, p] * self.task_communications[p][2]
                     for p in range(len(self.task_communications)))
@@ -339,8 +347,8 @@ class Generator:
         # Add cluster-preserving constraints when requested
         if self.config.preserve_clusters:
             start_time = time.perf_counter()
-            for n in range(self.n):
-                self.problem += sum(self.phi[i, n] for i in range(self.i)) == 1
+            for n in range(self.N):
+                self.problem += sum(self.phi[i, n] for i in range(self.I)) == 1
             end_time = time.perf_counter()
             print(f"Added cluster-preserving constraints in {end_time - start_time:0.4f}s")
 
@@ -349,7 +357,7 @@ class Generator:
         self.problem.writeLP(file_name)
 
     def write_mps_to_file(self, file_name : str):
-        """Generate the problem file .mps"""
+        """Generate the problem file .Mps"""
         self.problem.writeMPS(file_name)
 
     @staticmethod
@@ -489,7 +497,7 @@ class Generator:
     def solve_problem(problem, solver_name: str):
         """Solve the given problem"""
 
-        # Solver
+        # Get PuLP solver
         solver = pulp.getSolver(solver=solver_name, keepFiles=True)
 
         # Set solver
@@ -503,6 +511,6 @@ class Generator:
         """Get and create output dir"""
         output_dir = os.path.join(os.path.dirname(__file__), "../..", output_dirname)
         if os.path.isdir(output_dir) is False:
-            os.mkdir(output_dir)
+            os.Mkdir(output_dir)
 
         return output_dir
