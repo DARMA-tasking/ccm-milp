@@ -212,16 +212,16 @@ class Generator:
                 if key == "w_max":
                     continue
                 if value:
-                    print(key)
+                    print(f"  {key}")
 
             print("\n# Solution summary:")
             for i in range(self.I):
-                print(f"Rank {i}: "
+                print(f"  Rank {i}: "
                       f"L = {rank_totals[i][0]}, "
                       f"W = {rank_totals[i][1]}, "
                       f"unhomed: {rank_totals[i][2]}")
-            print("W_max =", solution["w_max"])
-            print(f"$assignments={assignments};")
+            print("  W_max =", solution["w_max"])
+            print("  assignments =", assignments)
 
         else: # if self.problem.status == pulp.LpStatusOptimal
             print("# No solution found")
