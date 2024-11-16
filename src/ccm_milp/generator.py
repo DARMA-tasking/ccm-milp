@@ -47,30 +47,35 @@ class Generator:
     def __init__(self, config: Configuration, input_problem):
         print(f"\n# Generating {type(input_problem).__name__} linear problem")
         self.config = config
+
+        # Rank parameters
         self.rank_mems = input_problem.rank_mems
+        self.I = len(self.rank_mems)
+        print(f"  I = {self.I} ranks")
         self.rank_working_bytes = input_problem.rank_working_bytes
+
+        # Task parameters
         self.task_loads = input_problem.task_loads
+        self.K = len(self.task_loads)
+        print(f"  K = {self.K} tasks")
+        sum_loads = sum(self.task_loads)
+        print(f"  total rank load = {sum_loads}, average rank load = {sum_loads/self.I}")
         self.task_working_bytes = input_problem.task_working_bytes
         self.task_footprint_bytes = input_problem.task_footprint_bytes
         self.task_rank = input_problem.task_rank
         self.task_id = input_problem.task_id
+
+        # Communication parameters
+        self.task_communications = input_problem.task_communications
+        self.M = len(self.task_communications)
+        print(f"  M = {self.M} communications")
+
+        # Shared memory block parameters
         self.memory_blocks = input_problem.memory_blocks
+        self.N = len(self.memory_blocks)
+        print(f"  N = {self.N} shared memory blocks")
         self.memory_block_home = input_problem.memory_block_home
         self.task_memory_block_mapping = input_problem.task_memory_block_mapping
-        self.task_communications = input_problem.task_communications
-
-
-        # Cardinality of rank set R
-        self.I = len(self.rank_mems) # i is the 
-
-        # Cardinality of task set T
-        self.K = len(self.task_loads)
-
-        # Cardinality of communication set C
-        self.M = len(self.task_communications)
-
-        # Cardinality of shared block set S
-        self.N = len(self.memory_blocks)
 
         # Tasks to ranks assignment matrix
         self.chi = None
@@ -86,9 +91,6 @@ class Generator:
 
         # The linear problem
         self.problem = None
-
-        print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.I}")
-        print(f"Ranks={self.I}, task_loads={self.K}, memory_blocks={self.N} comms={self.M}")
 
     def generate_problem(self):
         """Generate the problem"""
@@ -255,7 +257,7 @@ class Generator:
         for k in range(self.K):
             self.problem += sum(self.chi[i, k] for i in range(self.I)) == 1
         end_time = time.perf_counter()
-        print(f"Added basic constraints in {end_time - start_time:0.4f}s")
+        print(f"  added basic constraints in {end_time - start_time:0.4f}s")
 
         # Add equations 17 and 18 for shared block constraints
         start_time = time.perf_counter()
@@ -271,7 +273,7 @@ class Generator:
                     for p in range(len(self.task_memory_block_mapping[n]))
                 )
         end_time = time.perf_counter()
-        print(f"Added shared blocks constraints in {end_time - start_time:0.4f}s")
+        print(f"  added shared blocks constraints in {end_time - start_time:0.4f}s")
 
         # Include memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
@@ -296,7 +298,7 @@ class Generator:
                             sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                         ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
             end_time = time.perf_counter()
-            print(f"Added memory constraints in {end_time - start_time:0.4f}s")
+            print(f"  added memory constraints in {end_time - start_time:0.4f}s")
 
         # Add communication constraints in full model case
         if self.config.is_fmwp:
@@ -314,7 +316,7 @@ class Generator:
                             + self.chi[j, self.task_communications[p][1]] - 1
                         )
             end_time = time.perf_counter()
-            print(f"Added communications constraints in {end_time - start_time:0.4f}s")
+            print(f"  added communications constraints in {end_time - start_time:0.4f}s")
 
         # Add continuous constraints
         start_time = time.perf_counter()
@@ -350,7 +352,7 @@ class Generator:
                     self.psi[j, i, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
         end_time = time.perf_counter()
-        print(f"Added continuous constraints in {end_time - start_time:0.4f}s")
+        print(f"  added continuous constraints in {end_time - start_time:0.4f}s")
 
         # Add cluster-preserving constraints when requested
         if self.config.preserve_clusters:
@@ -358,7 +360,7 @@ class Generator:
             for n in range(self.N):
                 self.problem += sum(self.phi[i, n] for i in range(self.I)) == 1
             end_time = time.perf_counter()
-            print(f"Added cluster-preserving constraints in {end_time - start_time:0.4f}s")
+            print(f"  added cluster-preserving constraints in {end_time - start_time:0.4f}s")
 
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
