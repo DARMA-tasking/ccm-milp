@@ -80,6 +80,7 @@ def run_interactive():
         alpha, beta, gamma, delta = DP.alpha, DP.beta, DP.gamma, DP.delta
     return [
         avail_examples[example_id],
+        Tools.input_int("rank memory bound", DP.ranks_per_node),
         is_fwmp, alpha, beta, gamma, delta,
         Tools.input_float("rank memory bound", DP.rank_memory_bound),
         Tools.input_float("node memory bound", DP.node_memory_bound),
@@ -100,11 +101,13 @@ def run_batch(file_name: str):
 
     # Parse parameters
     print("# Model configuration:")
-    c_float, c_bool, ccm_example, file_stem = {}, {}, None, ""
+    c_bool, c_int, c_float, ccm_example, file_stem = {}, {}, {}, None, ''
     for k, v in parameters.items():
         print(f"  {k}: {v}")
         if k in ("is_fwmp", "bounded_memory", "preserve_clusters", "verbose"):
             c_bool[k] = bool(v)
+        elif k in ("ranks_per_node"):
+            c_int[k] = int(v)
         elif k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
             c_float[k] = float(v)
         elif k == "example_id":
@@ -122,6 +125,7 @@ def run_batch(file_name: str):
 
     return [
         ccm_example,
+        c_int.get("ranks_per_node", DP.ranks_per_node),
         c_bool.get("is_fwmp", False),
         c_float.get("alpha", DP.alpha),
         c_float.get("beta", DP.beta),
@@ -165,9 +169,9 @@ def main():
 
     # Retrieve parameters either interactively or in batch mode
     if file_name:
-        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose, file_stem = run_batch(file_name)
+        ccm_example, rpn, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose, file_stem = run_batch(file_name)
     else:
-        ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose = run_interactive()
+        ccm_example, rpn, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose = run_interactive()
         file_stem = ''
 
     # Manage available examples with JSON
@@ -186,7 +190,7 @@ def main():
 
     # Generate linear program and solve it when requested
     ccm_milp_generator = Generator(
-        Configuration(fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl),
+        Configuration(rpn, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl),
         data)
     if solver_name:
         # Generate and solve

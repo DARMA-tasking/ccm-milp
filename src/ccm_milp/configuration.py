@@ -40,6 +40,7 @@ from dataclasses import dataclass
 @dataclass
 class Configuration:
     """Configuration object"""
+    ranks_per_node: int
     is_fmwp: bool
     is_comcp: bool
     alpha: float
@@ -52,6 +53,7 @@ class Configuration:
 
     def __init__(
             self,
+            ranks_per_node: int,
             is_fmwp: bool,
             alpha: float,
             beta: float,
@@ -60,7 +62,22 @@ class Configuration:
             rank_memory_bound: float,
             node_memory_bound: float,
             preserve_clusters: bool):
-        print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
+
+        # Initialize member variables
+        self.ranks_per_node = ranks_per_node
+        self.is_fmwp = is_fmwp
+        self.is_comcp = not is_fmwp
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.delta = delta
+        self.rank_memory_bound = rank_memory_bound
+        self.node_memory_bound = node_memory_bound
+        self.preserve_clusters = preserve_clusters
+        
+        # Report member variables
+        print(f"\n# Configured {'Full Work Model' if is_fmwp else 'Compute-Only Memory-Constrained'} problem with:")
+        print(f"  {ranks_per_node} rank{'s' if ranks_per_node > 1 else ''} per node")
         print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
         print(f"  gamma = {gamma}")
@@ -71,19 +88,11 @@ class Configuration:
             print(f"  node memory bound = {node_memory_bound}")
         if preserve_clusters:
             print("  while preserving block clusters")
-        self.is_fmwp = is_fmwp
-        self.is_comcp = not is_fmwp
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.delta = delta
-        self.rank_memory_bound = rank_memory_bound
-        self.node_memory_bound = node_memory_bound
-        self.preserve_clusters = preserve_clusters
 
 @dataclass
 class DefaultParameters:
     """Default parameters"""
+    ranks_per_node: int = 1
     alpha: float = 1.0
     beta: float = 0.0
     gamma: float = 0.0

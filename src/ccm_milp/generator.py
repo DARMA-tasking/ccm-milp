@@ -46,8 +46,9 @@ class Generator:
 
     def __init__(self, config: Configuration, input_problem):
         print(f"\n# Generating {type(input_problem).__name__} linear problem")
+        # Keep track of configuration
         self.config = config
-
+        
         # Rank parameters
         self.rank_mems = input_problem.rank_mems
         self.I = len(self.rank_mems)
@@ -76,6 +77,13 @@ class Generator:
         print(f"  N = {self.N} shared memory blocks")
         self.memory_block_home = input_problem.memory_block_home
         self.task_memory_block_mapping = input_problem.task_memory_block_mapping
+
+        # Check consistency of rank per node parameters
+        self.Q = self.config.ranks_per_node
+        if self.I % self.Q:
+            print(f"*** ERROR: number of ranks per node {self.Q} does not divide number of ranks {self.I}")
+            sys.exit(1)
+        print(f"  Q = {self.Q} rank{'s' if self.Q > 1 else ''} per node ({self.I // self.Q} nodes)")
 
         # Tasks to ranks assignment matrix
         self.chi = None
