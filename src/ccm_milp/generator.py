@@ -72,11 +72,19 @@ class Generator:
         # Cardinality of shared block set S
         self.N = len(self.memory_blocks)
 
+        # Tasks to ranks assignment matrix
         self.chi = None
+
+        # Shared blocks to ranks assignment matrix
         self.phi = None
+
+        # Shared ranks to communications assignment matrix
         self.psi = None
+
+        # Maximum work continuous variable
         self.w_max = None
 
+        # The linear problem
         self.problem = None
 
         print(f"Total load={sum(self.task_loads)}, Mean Load={sum(self.task_loads)/self.I}")
