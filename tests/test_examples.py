@@ -50,7 +50,7 @@ class TestExamples(unittest.TestCase):
                     # Generate linear program without solving it
                     subprocess.run([
                         "python",
-                        os.path.join(self.src_dir, "ccm_milp.py"),
+                        os.path.join(self.src_dir, "ccm_milp_run.py"),
                         "-c",
                         config_file
                         "-s",
