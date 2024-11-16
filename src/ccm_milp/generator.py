@@ -42,7 +42,7 @@ from .configuration import Configuration
 from .data import Data
 
 class Generator:
-    """Manage CCM-MILP problem - Setup, Generate and Solve"""
+    """Manage CCM-MILP problem: setup, generate, and solve"""
 
     def __init__(self, config: Configuration, input_problem):
         print(f"\n# Instantiating {type(input_problem).__name__} problem")
@@ -90,7 +90,8 @@ class Generator:
             print("# Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
             raise ValueError(f"Solver not found: {solver_name}")
 
-        print("# Solver: ", solver_name)
+        # Execute solver
+        print("\n# Solver:", solver_name)
         self.solve_problem(self.problem, solver_name)
 
     def verify_and_tally_edge(self, r_snd: int, r_rcv: int, c_ind: int):

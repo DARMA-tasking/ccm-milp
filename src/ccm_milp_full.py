@@ -152,8 +152,6 @@ def get_rank_file_name(file_prefix : str, file_suffix : str, rank_id : int):
     return f"{file_prefix}.{rank_id}.{file_suffix}"
 
 def main():
-    """Run with interactive selection of example"""
-
     # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP",
@@ -174,7 +172,7 @@ def main():
         ccm_example, fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose = run_interactive()
         file_stem = ''
 
-    # Manage available example with JSPN
+    # Manage available examples with JSON
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
         data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd, verbose)
@@ -187,24 +185,31 @@ def main():
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
-    # Build and save linear program
+    # Generate linear program and solve it when requested
     ccm_milp_generator = Generator(
         Configuration(fwmp, alpha, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl),
         data)
-    ccm_milp_generator.generate_problem_and_solve(solver_name)
+    if solver_name:
+        # Generate and solve
+        ccm_milp_generator.generate_problem_and_solve(solver_name)
 
-    # Report solution to linear program when found
-    permutation_file: str =  ccm_example.filename + "_" + "permutation.json"
-    ccm_milp_generator.output_solution(permutation_file)
-    print()
+        # Report solution to linear program when found
+        permutation_file: str =  ccm_example.filename + "_" + "permutation.json"
+        ccm_milp_generator.output_solution(permutation_file)
+        print()
 
-    if len(ccm_example.json) > 0:
-        # Call permute function
-        Generator.permute(
-            permutation_file = os.path.join(Generator.output_dir(), permutation_file),
-            data_files = ccm_example.json,
-            file_prefix="permuted_"
-        )
+        if len(ccm_example.json) > 0:
+            # Call permute function
+            Generator.permute(
+                permutation_file = os.path.join(Generator.output_dir(), permutation_file),
+                data_files = ccm_example.json,
+                file_prefix="permuted_"
+            )
+
+    else:
+        # Generate only
+        print("\n# No LP solve requested")
+        ccm_milp_generator.generate_problem()
 
 if __name__ == "__main__":
     main()

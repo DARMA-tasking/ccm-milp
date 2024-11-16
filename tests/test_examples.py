@@ -47,14 +47,17 @@ class TestExamples(unittest.TestCase):
                     print("  ----------------")
                     print("")
 
+                    # Generate linear program without solving it
                     subprocess.run([
                         "python",
                         os.path.join(self.src_dir, "ccm_milp_problem.py"),
                         "-c",
                         config_file
+                        "-s",
+                        None
                     ], check=True)
 
-                    # # Check problem file was generated
+                    # Check whether problem file was generated
                     lp_file = os.path.join(self.src_dir, "problem.lp")
                     self.assertTrue(os.path.isfile(lp_file), f"File: {lp_file} does not exist!")
                     mps_file = os.path.join(self.src_dir, "problem.mps")
