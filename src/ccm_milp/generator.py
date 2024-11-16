@@ -51,10 +51,11 @@ class Generator:
         self.config = config
         
         # Rank parameters
-        self.rank_mems = input_problem.rank_mems
-        self.I = len(self.rank_mems)
+        self.rank_M_inf = input_problem.rank_mems
+        self.node_M_inf = input_problem.node_mems
+        self.I = len(self.rank_M_inf)
         print(f"  I = {self.I} ranks")
-        self.rank_working_bytes = input_problem.rank_working_bytes
+        self.rank_M_baseline = input_problem.rank_working_bytes
 
         # Task parameters
         self.task_loads = input_problem.task_loads
@@ -62,8 +63,8 @@ class Generator:
         print(f"  K = {self.K} tasks")
         sum_loads = sum(self.task_loads)
         print(f"  total rank load = {sum_loads}, average rank load = {sum_loads/self.I}")
-        self.task_working_bytes = input_problem.task_working_bytes
-        self.task_footprint_bytes = input_problem.task_footprint_bytes
+        self.task_M_overhead = input_problem.task_working_bytes
+        self.task_M_baseline = input_problem.task_footprint_bytes
         self.task_rank = input_problem.task_rank
         self.task_id = input_problem.task_id
 
@@ -295,35 +296,78 @@ class Generator:
         print(f"  added {n_constraints_added} shared blocks constraints for (18) & (19) in {end_time - start_time:0.4f}s")
         n_constraints_total += n_constraints_added
 
-        # Include memory constraints when requested
+        # Include rank memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
             n_constraints_added = 0
-            all_k_working_bytes_zero = True
-            for i in range(self.K):
-                if self.task_working_bytes[i] != 0:
-                    all_k_working_bytes_zero = False
+
+            # Check whether all task memory overheads are nil
+            all_task_M_overhead_zero = True
+            for k in range(self.K):
+                if self.task_M_overhead[k]:
+                    all_task_M_overhead_zero = False
+
             # Add equation 20
             for i in range(self.I):
-                if all_k_working_bytes_zero:
+                if all_task_M_overhead_zero:
+                    # Only one constraint when all task working bytes are nil
                     self.problem += (
-                        sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.K)) +
+                        sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
                         sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                    ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
+                    ) <= (self.rank_M_inf[i] - self.rank_M_baseline[i])
                     n_constraints_added += 1
                 else:
+                    # Generate all K constraints otherwise
                     for k in range(self.K):
-                        # Add equation 19
                         self.problem += (
-                            sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.K)) +
-                            self.task_working_bytes[k] * self.chi[i, k] +
+                            sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
+                            self.task_M_overhead[k] * self.chi[i, k] +
                             sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                        ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
+                        ) <= (self.rank_M_inf[i] - self.rank_M_baseline[i])
                         n_constraints_added += 1
 
             # Report on added constraints
             end_time = time.perf_counter()
             print(f"  added {n_constraints_added} rank memory constraints for (20) in {end_time - start_time:0.4f}s")
+            n_constraints_total += n_constraints_added
+
+        # Include node memory constraints when requested
+        if self.config.node_memory_bound < math.inf:
+            start_time = time.perf_counter()
+            n_constraints_added = 0
+
+            # Check whether all task memory overheads are nil
+            all_task_M_overhead_zero = True
+            for k in range(self.K):
+                if self.task_M_overhead[k]:
+                    all_task_M_overhead_zero = False
+            
+            # Add equation 21
+            for h in range(self.I // self.Q):
+                if all_task_M_overhead_zero:
+                    # Only one constraint when all task working bytes are nil
+                    self.problem += (sum(
+                        sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
+                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
+                        for i in range(h * self.Q, (h + 1) * self.Q))
+                    ) <= (self.node_M_inf[h] - sum(
+                        self.rank_M_baseline[i] for i in range(h * self.Q, (h + 1) * self.Q)))
+                    n_constraints_added += 1
+                else:
+                    # Generate all K constraints otherwise
+                    for k in range(self.K):
+                        self.problem += (sum(
+                            sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
+                            self.task_M_overhead[k] * self.chi[i, k] +
+                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
+                            for i in range(h * self.Q, (h + 1) * self.Q))
+                        ) <= (self.node_M_inf[h] - sum(
+                            self.rank_M_baseline[i] for i in range((h - 1) * self.Q, h * self.Q)))
+                        n_constraints_added += 1
+
+            # Report on added constraints
+            end_time = time.perf_counter()
+            print(f"  added {n_constraints_added} node memory constraints for (21) in {end_time - start_time:0.4f}s")
             n_constraints_total += n_constraints_added
 
         # Add communication constraints 27 28 29 in full model case
@@ -543,7 +587,7 @@ class Generator:
                 json.dump(data_json, f)
 
     @staticmethod
-    def parse_json(data_files: list, rank_mem_bnd: float, node_mem_bnd: float, verbose=False) -> Data:
+    def parse_json(data_files: list, ranks_per_node: int, rank_mem_bnd: float, node_mem_bnd: float, verbose=False) -> Data:
         """Parse json data files to python"""
         # Permute sorted data
         def sort_func(filepath):
@@ -556,7 +600,7 @@ class Generator:
             print("\n# Data files:")
             for df in data_files:
                 print(f"  {df}")
-        data = Data(rank_mem_bnd, node_mem_bnd)
+        data = Data(ranks_per_node, rank_mem_bnd, node_mem_bnd)
         data.parse_json(data_files, verbose)
         return data
 

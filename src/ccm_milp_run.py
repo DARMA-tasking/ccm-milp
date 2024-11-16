@@ -178,13 +178,13 @@ def main():
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
         # Retrieve data from set of predefined examples
-        data = Generator.parse_json(ccm_example.json, rank_mem_bnd, node_mem_bnd, verbose)
+        data = Generator.parse_json(ccm_example.json, rpn, rank_mem_bnd, node_mem_bnd, verbose)
     elif file_stem != '':
         # Retrieve data from specified file stem
         n_ranks = get_num_ranks(file_stem, "json")
         print(f"# Number of detected ranks: {n_ranks}")
         files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
-        data = Generator.parse_json(files, rank_mem_bnd, node_mem_bnd, verbose)
+        data = Generator.parse_json(files, rpn, rank_mem_bnd, node_mem_bnd, verbose)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 

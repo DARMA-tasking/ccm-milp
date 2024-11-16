@@ -2,4 +2,4 @@ example_id: 1
 ranks_per_node: 2
 is_fwmp: False
 node_memory_bound: 25.0
-
+verbose: True

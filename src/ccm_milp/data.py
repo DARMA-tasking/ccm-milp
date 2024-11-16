@@ -39,7 +39,8 @@ import math
 class Data:
     """Data file class used after parsing json data files"""
 
-    def __init__(self, rank_mem_bnd: float, node_mem_bnd: float):
+    def __init__(self, ranks_per_node: int, rank_mem_bnd: float, node_mem_bnd: float):
+        self.ranks_per_node = ranks_per_node
         self.rank_mem_bnd = rank_mem_bnd
         self.node_mem_bnd = node_mem_bnd
         self.rank_mems = None
@@ -134,6 +135,9 @@ class Data:
         self.rank_mems = [self.rank_mem_bnd] * len(ranks)
         self.rank_working_bytes =  list(ranks.values())
 
+        # All nodes have same memory bound
+        self.node_mems = [self.node_mem_bnd] * (len(ranks) // self.ranks_per_node)
+
         # Initialize tasks
         self.task_loads = tasks
         self.task_working_bytes = tasks_working_bytes
@@ -157,6 +161,7 @@ class Data:
         if verbose:
             print("\n# Data object:")
             print(f"  rank_mems:                 {self.rank_mems}")
+            print(f"  node_mems:                 {self.node_mems}")
             print(f"  rank_working_bytes:        {self.rank_working_bytes}")
             print(f"  task_loads:                {self.task_loads}")
             print(f"  task_working_bytes:        {self.task_working_bytes}")
