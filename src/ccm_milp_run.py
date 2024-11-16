@@ -52,7 +52,7 @@ sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../.
 Examples = Tools.import_class("examples.configuration", "Examples")
 
 # Available CCM-MILP examples
-avail_examples = Examples.list() 
+avail_examples = Examples.list()
 
 # Default CCM parameter values
 DP: Final = DefaultParameters()
