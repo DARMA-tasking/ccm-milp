@@ -108,7 +108,7 @@ def run_batch(file_name: str):
             c_bool[k] = bool(v)
         elif k in ("ranks_per_node"):
             c_int[k] = int(v)
-        elif k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound"):
+        elif k in ("alpha", "beta", "gamma", "delta", "rank_memory_bound", "node_memory_bound"):
             c_float[k] = float(v)
         elif k == "example_id":
             ccm_example = avail_examples[int(v)]
