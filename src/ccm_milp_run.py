@@ -97,7 +97,7 @@ def run_batch(file_name: str):
         with open(file_name, 'r', encoding="utf-8") as f:
             parameters = yaml.safe_load(f)
     except: # pylint: disable=bare-except
-        print ("*** Could not parse", file_name)
+        print ("*** ERROR: Could not parse", file_name)
         sys.exit(1)
 
     # Parse parameters
@@ -114,12 +114,12 @@ def run_batch(file_name: str):
         elif k in ("file_stem"):
             file_stem = str(v)
         else:
-            print ("*** Incorrect key:", k)
+            print ("*** ERROR: Incorrect key:", k)
             sys.exit(1)
 
     # Retrieve and return problem configuration
     if not ccm_example and file_stem == '':
-        print ("*** No CCM example was defined or file_stem provided")
+        print ("*** ERROR: No CCM example was defined or file_stem provided")
         sys.exit(1)
 
     return [
