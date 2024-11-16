@@ -35,7 +35,7 @@ class TestExamples(unittest.TestCase):
                     print(f"Example : #{example_id}: {example_config.filename}.{example_config.classname}")
                     print("-----------------------------------------")
 
-                    # run ccm_milp_problem for example
+                    # Run CCM MILP to generate problem only
                     config_file = os.path.join(self.config_dir, test_config.get("file"))
                     self.assertTrue(os.path.isfile(config_file), f"File: {config_file} does not exist!")
 
@@ -50,7 +50,7 @@ class TestExamples(unittest.TestCase):
                     # Generate linear program without solving it
                     subprocess.run([
                         "python",
-                        os.path.join(self.src_dir, "ccm_milp_problem.py"),
+                        os.path.join(self.src_dir, "ccm_milp.py"),
                         "-c",
                         config_file
                         "-s",
