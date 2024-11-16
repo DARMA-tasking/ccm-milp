@@ -35,6 +35,7 @@
 
 import time
 import os
+import sys
 import json
 import pulp
 import math
@@ -247,7 +248,7 @@ class Generator:
 
         # psi: ranks <- communications self.I x self.I x self.M, binary variables in MILP
         self.psi = {}
-        if self.config.is_fmwp:
+        if self.config.is_fwmp:
             self.psi = pulp.LpVariable.dicts("psi", ((i, j, m)
                 for i in range(self.I)
                 for j in range(self.I)
@@ -259,45 +260,45 @@ class Generator:
 
         # Add the continuous variable to the problem
         self.problem += self.w_max
-        n_constraints = 0
+        n_constraints_total = 0
 
         # Add part of equation 14 constraining every task to a single rank
         start_time = time.perf_counter()
-        n_new_constraints = 0
+        n_constraints_added = 0
         for k in range(self.K):
             self.problem += sum(self.chi[i, k] for i in range(self.I)) == 1
-            n_new_constraints += 1
+            n_constraints_added += 1
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_new_constraints} basic constraints for (14) in {end_time - start_time:0.4f}s")
-        n_constraints += n_new_constraints
+        print(f"  added {n_constraints_added} basic constraints for (14) in {end_time - start_time:0.4f}s")
+        n_constraints_total += n_constraints_added
 
         # Add equations 18 and 19 for shared block constraints
         start_time = time.perf_counter()
-        n_new_constraints = 0
+        n_constraints_added = 0
         for i in range(self.I):
             for n in range(self.N):
                 # Add equation 18
                 for p in range(len(self.task_memory_block_mapping[n])):
                     self.problem += self.phi[i, n] >= self.chi[i, self.task_memory_block_mapping[n][p]]
-                    n_new_constraints += 1
+                    n_constraints_added += 1
 
                 # Add equation 19
                 self.problem += self.phi[i, n] <= sum(
                     self.chi[i, self.task_memory_block_mapping[n][p]]
                     for p in range(len(self.task_memory_block_mapping[n])))
-                n_new_constraints += 1
+                n_constraints_added += 1
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_new_constraints} shared blocks constraints for (18) & (19) in {end_time - start_time:0.4f}s")
-        n_constraints += n_new_constraints
+        print(f"  added {n_constraints_added} shared blocks constraints for (18) & (19) in {end_time - start_time:0.4f}s")
+        n_constraints_total += n_constraints_added
 
         # Include memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
-            n_new_constraints = 0
+            n_constraints_added = 0
             all_k_working_bytes_zero = True
             for i in range(self.K):
                 if self.task_working_bytes[i] != 0:
@@ -309,7 +310,7 @@ class Generator:
                         sum(self.task_footprint_bytes[l] * self.chi[i, l] for l in range(self.K)) +
                         sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                     ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
-                    n_new_constraints += 1
+                    n_constraints_added += 1
                 else:
                     for k in range(self.K):
                         # Add equation 19
@@ -318,49 +319,49 @@ class Generator:
                             self.task_working_bytes[k] * self.chi[i, k] +
                             sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                         ) <= (self.rank_mems[i] - self.rank_working_bytes[i])
-                        n_new_constraints += 1
+                        n_constraints_added += 1
 
             # Report on added constraints
             end_time = time.perf_counter()
-            print(f"  added {n_new_constraints} rank memory constraints for (20) in {end_time - start_time:0.4f}s")
-            n_constraints += n_new_constraints
+            print(f"  added {n_constraints_added} rank memory constraints for (20) in {end_time - start_time:0.4f}s")
+            n_constraints_total += n_constraints_added
 
         # Add communication constraints 27 28 29 in full model case
-        if self.config.is_fmwp:
+        if self.config.is_fwmp:
             start_time = time.perf_counter()
-            n_new_constraints = 0
+            n_constraints_added = 0
             for i in range(self.I):
                 for j in range(self.I):
                     # Iterate over task communications
                     for p,_ in enumerate(self.task_communications):
                         # Add equation 27
                         self.problem += self.psi[i, j, p] <= self.chi[i, self.task_communications[p][0]]
-                        n_new_constraints += 1
+                        n_constraints_added += 1
 
                         # Add equation 28
                         self.problem += self.psi[i, j, p] <= self.chi[j, self.task_communications[p][1]]
-                        n_new_constraints += 1
+                        n_constraints_added += 1
 
                         # Add equation 29
                         self.problem += (
                               self.psi[i, j, p] >= self.chi[i, self.task_communications[p][0]]
                             + self.chi[j, self.task_communications[p][1]] - 1)
-                        n_new_constraints += 1
+                        n_constraints_added += 1
 
             # Report on added constraints
             end_time = time.perf_counter()
-            print(f"  added {n_new_constraints} communications constraints for (27) -- (29) in {end_time - start_time:0.4f}s")
-            n_constraints += n_new_constraints
+            print(f"  added {n_constraints_added} communications constraints for (27) -- (29) in {end_time - start_time:0.4f}s")
+            n_constraints_total += n_constraints_added
 
         # Add continuous constraints
         start_time = time.perf_counter()
-        n_new_constraints = 0
+        n_constraints_added = 0
         if self.config.is_comcp:
             # Add equation 22
             for i in range(self.I):
                 self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
-                n_new_constraints += 1
-        elif self.config.is_fmwp:
+                n_constraints_added += 1
+        elif self.config.is_fwmp:
             # Add equation 32
             for i in range(self.I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
@@ -383,13 +384,13 @@ class Generator:
                 self.problem += alpha_term + gamma_term + delta_term + self.config.beta * sum(
                     self.psi[i, j, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
-                n_new_constraints += 1
+                n_constraints_added += 1
 
                 # Add equation 30 for second transposition of beta term (σ(i,j) = {j,i})
                 self.problem += alpha_term + gamma_term + delta_term + self.config.beta * sum(
                     self.psi[j, i, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
-                n_new_constraints += 1
+                n_constraints_added += 1
             else:
                 # No model selected
                 print("*** ERROR: no model was selected")
@@ -397,22 +398,25 @@ class Generator:
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_new_constraints} continuous constraints for ({'2' if self.config.is_comcp else '3'}2) in {end_time - start_time:0.4f}s")
-        n_constraints += n_new_constraints
+        print(f"  added {n_constraints_added} continuous constraints for ({'2' if self.config.is_comcp else '3'}2) in {end_time - start_time:0.4f}s")
+        n_constraints_total += n_constraints_added
 
         # Add cluster-preserving constraints 16 when requested
         if self.config.preserve_clusters:
             start_time = time.perf_counter()
-            n_new_constraints = 0
+            n_constraints_added = 0
             for n in range(self.N):
                 self.problem += sum(self.phi[i, n] for i in range(self.I)) == 1
-                n_new_constraints += 1
+                n_constraints_added += 1
             end_time = time.perf_counter()
-            print(f"  added {n_new_constraints} cluster-preserving constraints for (16) in {end_time - start_time:0.4f}s")
-            n_constraints += n_new_constraints
+            print(f"  added {n_constraints_added} cluster-preserving constraints for (16) in {end_time - start_time:0.4f}s")
+            n_constraints_total += n_constraints_added
 
-        # Report on total number of constraints
-        print(f"  number of constraints = {n_constraints}")
+        # Compute theoretical number of constraints and check consistency
+        n_constraints_theory = self.K + self.I * (self.K + 1) * (self.N + 1)
+        if self.config.is_fwmp:
+            n_constraints_theory += self.I * (3 * self.I * self.M + 1)
+        print(f"  {n_constraints_total} non-nil constraints added out of theoretical total of {n_constraints_theory}")
 
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
