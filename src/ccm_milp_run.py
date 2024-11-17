@@ -38,8 +38,8 @@ import re
 import argparse
 import importlib
 import sys
+import typing
 import yaml
-from typing import Final
 
 # Import classes
 from ccm_milp.configuration import Configuration, DefaultParameters
@@ -54,7 +54,7 @@ Examples = Tools.import_class("examples.configuration", "Examples")
 avail_examples = Examples.list()
 
 # Default CCM parameter values
-DP: Final = DefaultParameters()
+DP: typing.Final = DefaultParameters()
 
 def run_interactive():
     """Run with interactive selection of example"""
@@ -70,7 +70,7 @@ def run_interactive():
 
     # Interactively get and return problem configuration
     print("\n# Model configuration:")
-    if (is_fwmp := (input("  FWMP [y/N]? ") == "y")):
+    if (is_fwmp := input("  FWMP [y/N]? ") == "y"):
         alpha = Tools.input_float("alpha")
         beta  = Tools.input_float("beta")
         gamma = Tools.input_float("gamma")

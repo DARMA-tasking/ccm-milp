@@ -37,10 +37,14 @@ import time
 import os
 import sys
 import json
-import pulp
+import typing
 import math
-from .configuration import Configuration
+import pulp
+from .configuration import Configuration, DefaultParameters
 from .data import Data
+
+# Default CCM parameter values
+DP: typing.Final = DefaultParameters()
 
 class Generator:
     """Manage CCM-MILP problem: setup, generate, and solve"""
@@ -587,7 +591,12 @@ class Generator:
                 json.dump(data_json, f)
 
     @staticmethod
-    def parse_json(data_files: list, ranks_per_node: int, rank_mem_bnd: float, node_mem_bnd: float, verbose=False) -> Data:
+    def parse_json(
+            data_files: list,
+            ranks_per_node: int = DP.ranks_per_node,
+            rank_mem_bnd: float = DP.rank_memory_bound,
+            node_mem_bnd: float = DP.node_memory_bound,
+            verbose: bool =False) -> Data:
         """Parse json data files to python"""
         # Permute sorted data
         def sort_func(filepath):
