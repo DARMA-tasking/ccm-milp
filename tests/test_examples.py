@@ -54,7 +54,7 @@ class TestExamples(unittest.TestCase):
                         "-c",
                         config_file,
                         "-s",
-                        None
+                        ''
                     ], check=True)
 
                     # Check whether problem file was generated
