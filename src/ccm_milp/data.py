@@ -34,7 +34,6 @@
 #
 
 import json
-import math
 
 class Data:
     """Data file class used after parsing json data files"""
@@ -44,6 +43,7 @@ class Data:
         self.rank_mem_bnd = rank_mem_bnd
         self.node_mem_bnd = node_mem_bnd
         self.rank_mems = None
+        self.node_mems = None
         self.rank_working_bytes = None
         self.task_loads = None
         self.task_working_bytes = None

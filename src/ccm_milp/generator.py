@@ -106,7 +106,7 @@ class Generator:
         """Generate the problem"""
         self.setup_milp()
         self.write_lp_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.lp"))
-        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.Mps"))
+        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.mps"))
 
     def generate_problem_and_solve(self, solver_name: str):
         """Generate the problem and solve it"""
@@ -435,10 +435,10 @@ class Generator:
                     self.psi[j, i, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
                 n_constraints_added += 1
-            else:
-                # No model selected
-                print("*** ERROR: no model was selected")
-                sys.exit(1)
+        else:
+            # No model selected
+            print("*** ERROR: no model was selected")
+            sys.exit(1)
 
         # Report on added constraints
         end_time = time.perf_counter()
@@ -467,7 +467,7 @@ class Generator:
         self.problem.writeLP(file_name)
 
     def write_mps_to_file(self, file_name : str):
-        """Generate the problem file .Mps"""
+        """Generate the problem file .mps"""
         self.problem.writeMPS(file_name)
 
     @staticmethod
@@ -622,6 +622,6 @@ class Generator:
         """Get and create output dir"""
         output_dir = os.path.join(os.path.dirname(__file__), "../..", output_dirname)
         if os.path.isdir(output_dir) is False:
-            os.Mkdir(output_dir)
+            os.mkdir(output_dir)
 
         return output_dir
