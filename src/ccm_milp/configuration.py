@@ -74,7 +74,7 @@ class Configuration:
         self.rank_memory_bound = rank_memory_bound
         self.node_memory_bound = node_memory_bound
         self.preserve_clusters = preserve_clusters
-        
+
         # Report member variables
         print(f"\n# Configured {'Full Work Model' if is_fwmp else 'Compute-Only Memory-Constrained'} problem with:")
         print(f"  {ranks_per_node} rank{'s' if ranks_per_node > 1 else ''} per node")

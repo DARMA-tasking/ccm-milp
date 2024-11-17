@@ -49,7 +49,7 @@ class Generator:
         print(f"\n# Generating {type(input_problem).__name__} linear problem")
         # Keep track of configuration
         self.config = config
-        
+
         # Rank parameters
         self.rank_M_inf = input_problem.rank_mems
         self.node_M_inf = input_problem.node_mems
@@ -341,7 +341,7 @@ class Generator:
             for k in range(self.K):
                 if self.task_M_overhead[k]:
                     all_task_M_overhead_zero = False
-            
+
             # Add equation 21
             for h in range(self.I // self.Q):
                 if all_task_M_overhead_zero:
