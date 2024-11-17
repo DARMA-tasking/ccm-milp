@@ -6,7 +6,7 @@ import json
 import pulp
 
 from src.ccm_milp.tools import Tools
-from src.ccm_milp.generator import CcmMilpGenerator
+from src.ccm_milp.generator import Generator
 
 # Add global path
 sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../..")))
@@ -157,7 +157,7 @@ class TestExamples(unittest.TestCase):
         output_json_files = []
         for input_json_file in synthetic_example.json:
             output_json_files.append(os.path.join(
-                CcmMilpGenerator.output_dir(),
+                Generator.output_dir(),
                 output_file_prefix + input_json_file.split("/").pop()
             ))
 
@@ -198,7 +198,7 @@ class TestExamples(unittest.TestCase):
         synthetic_example = avail_examples[1]
 
         # Parse json data files
-        data = CcmMilpGenerator.parse_json(synthetic_example.json)
+        data = Generator.parse_json(synthetic_example.json)
 
         # Check result
         self.assertEqual(
