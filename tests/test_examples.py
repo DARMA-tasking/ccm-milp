@@ -52,7 +52,7 @@ class TestExamples(unittest.TestCase):
                         "python",
                         os.path.join(self.src_dir, "ccm_milp_run.py"),
                         "-c",
-                        config_file
+                        config_file,
                         "-s",
                         None
                     ], check=True)
