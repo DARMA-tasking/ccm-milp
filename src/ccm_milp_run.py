@@ -79,7 +79,7 @@ def run_interactive():
         alpha, beta, gamma, delta = DP.alpha, DP.beta, DP.gamma, DP.delta
     return [
         avail_examples[example_id],
-        Tools.input_int("rank memory bound", DP.ranks_per_node),
+        Tools.input_int("ranks per node", DP.ranks_per_node),
         is_fwmp, alpha, beta, gamma, delta,
         Tools.input_float("rank memory bound", DP.rank_memory_bound),
         Tools.input_float("node memory bound", DP.node_memory_bound),
