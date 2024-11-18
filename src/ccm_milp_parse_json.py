@@ -54,7 +54,7 @@ def main():
     # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP parse json",
-        description="Parse json data to a python class oused by problem solver")
+        description="Parse json data to a python class used by problem solver")
     parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
 
     # Get options
