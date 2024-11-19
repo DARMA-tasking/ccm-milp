@@ -276,7 +276,7 @@ class Generator:
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_constraints_added} basic constraints for (14) in {end_time - start_time:0.4f}s")
+        print(f"  added {n_constraints_added} consistency constraints (14) in {end_time - start_time:0.4f}s")
         n_constraints_equal += n_constraints_added
 
         # Add equations 18 and 19 for shared block constraints
@@ -297,7 +297,7 @@ class Generator:
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_constraints_added} shared blocks constraints for (18) & (19) in {end_time - start_time:0.4f}s")
+        print(f"  added {n_constraints_added} shared blocks constraints (18) & (19) in {end_time - start_time:0.4f}s")
         n_constraints_inequ += n_constraints_added
 
         # Include rank memory constraints when requested
@@ -332,7 +332,7 @@ class Generator:
 
             # Report on added constraints
             end_time = time.perf_counter()
-            print(f"  added {n_constraints_added} rank memory constraints for (20) in {end_time - start_time:0.4f}s")
+            print(f"  added {n_constraints_added} rank memory constraints (20) in {end_time - start_time:0.4f}s")
             n_constraints_inequ += n_constraints_added
 
         # Include node memory constraints when requested
@@ -371,7 +371,7 @@ class Generator:
 
             # Report on added constraints
             end_time = time.perf_counter()
-            print(f"  added {n_constraints_added} node memory constraints for (21) in {end_time - start_time:0.4f}s")
+            print(f"  added {n_constraints_added} node memory constraints (21) in {end_time - start_time:0.4f}s")
             n_constraints_inequ += n_constraints_added
 
         # Add communication constraints 27 28 29 in full model case
@@ -398,7 +398,7 @@ class Generator:
 
             # Report on added constraints
             end_time = time.perf_counter()
-            print(f"  added {n_constraints_added} communications constraints for (27) -- (29) in {end_time - start_time:0.4f}s")
+            print(f"  added {n_constraints_added} communications constraints (27) -- (29) in {end_time - start_time:0.4f}s")
             n_constraints_inequ += n_constraints_added
 
         # Add continuous constraints
@@ -446,7 +446,7 @@ class Generator:
 
         # Report on added constraints
         end_time = time.perf_counter()
-        print(f"  added {n_constraints_added} continuous constraints for ({'2' if self.config.is_comcp else '3'}2) in {end_time - start_time:0.4f}s")
+        print(f"  added {n_constraints_added} continuous constraints ({'2' if self.config.is_comcp else '3'}2) in {end_time - start_time:0.4f}s")
         n_constraints_inequ += n_constraints_added
 
         # Add cluster-preserving constraints 16 when requested
@@ -457,14 +457,24 @@ class Generator:
                 self.problem += sum(self.phi[i, n] for i in range(self.I)) == 1
                 n_constraints_added += 1
             end_time = time.perf_counter()
-            print(f"  added {n_constraints_added} cluster-preserving constraints for (16) in {end_time - start_time:0.4f}s")
+            print(f"  added {n_constraints_added} cluster-preserving constraints (16) in {end_time - start_time:0.4f}s")
             n_constraints_equal += n_constraints_added
 
-        # Compute theoretical number of constraints and check consistency
-        n_constraints_theory = self.K + self.I * (self.K + 1) * (self.N + 1)
+        # Check that correct number of equality constraints were added
+        n_constraints_theory = self.K
+        if self.config.preserve_clusters:
+            n_constraints_theory += self.N
+        if n_constraints_equal == n_constraints_theory:
+            print(f"  {n_constraints_equal} equality constraints correctly added")
+        else:
+            print(f"*** ERROR: incorrect number of equality constrainsts added: {n_constraints_equal} <> {n_constraints_theory}")
+            sys.exit(1)
+
+        # Report on number of inequality constraints added
+        n_constraints_theory = self.I * (self.K + 1) * (self.N + 1)
         if self.config.is_fwmp:
             n_constraints_theory += self.I * (3 * self.I * self.M + 1)
-        print(f"  {n_constraints_equal} equality constraints added out of theoretical total of {n_constraints_theory}")
+        print(f"  {n_constraints_inequ} inequality constraints added out of a theoretical maximum of {n_constraints_theory}")
 
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
