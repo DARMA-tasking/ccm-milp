@@ -63,9 +63,9 @@ class Data:
         task_indices  = []
         task_rank_obj_id  = []
         tasks_rank  = []
-        task_shared_block_id_map = {}
-        shared_block_id_map = {}
-        shared_block_id_home  = {}
+        task_shared_id_map = {}
+        shared_id_map = {}
+        shared_id_home  = {}
         task_id = 0
         ranks = {}
         comunications = []
@@ -95,10 +95,10 @@ class Data:
                         # Get data
                         time = task["time"]
                         index = task.get("entity").get("index")
-                        obj_id = task.get("entity").get("id")
+                        obj_id = task.get("entity").get("seq_id")
                         if task.get("user_defined") is None:
                             continue
-                        shared_block_id = task.get("user_defined").get("shared_block_id")
+                        shared_id = task.get("user_defined").get("shared_id")
                         shared_bytes = task.get("user_defined").get("shared_bytes")
                         task_working_bytes = task.get("user_defined").get("task_working_bytes", 0)
                         task_footprint_bytes = task.get("user_defined").get("task_footprint_bytes", 0)
@@ -106,17 +106,17 @@ class Data:
 
                         # Set data
                         ranks[rank] = rank_working_bytes
-                        shared_block_id_map[shared_block_id] = shared_bytes
-                        shared_block_id_home[shared_block_id] = rank
+                        shared_id_map[shared_id] = shared_bytes
+                        shared_id_home[shared_id] = rank
                         tasks.append(time)
                         tasks_footprint_bytes.append(task_footprint_bytes)
                         tasks_working_bytes.append(task_working_bytes)
                         task_indices.append(index)
                         tasks_rank.append( rank)
                         task_rank_obj_id.append(obj_id)
-                        if shared_block_id not in task_shared_block_id_map:
-                            task_shared_block_id_map[shared_block_id] = []
-                        task_shared_block_id_map[shared_block_id].append(task_id)
+                        if shared_id not in task_shared_id_map:
+                            task_shared_id_map[shared_id] = []
+                        task_shared_id_map[shared_id].append(task_id)
                         total_load += time
 
                         # Manage counter
@@ -126,8 +126,8 @@ class Data:
                 if "communications" in data_json["phases"][0]:
                     for com in data_json["phases"][0]["communications"]:
                         comunications.append([
-                            com["from"]["id"],
-                            com["to"]["id"],
+                            com["from"]["seq_id"],
+                            com["to"]["seq_id"],
                             com["bytes"]
                         ])
 
@@ -147,11 +147,11 @@ class Data:
         self.task_id.sort()
 
         # Initialize shared memory blocks
-        self.memory_blocks = list(shared_block_id_map.values())
+        self.memory_blocks = list(shared_id_map.values())
         self.memory_blocks.sort()
-        self.memory_block_home = list(shared_block_id_home.values())
+        self.memory_block_home = list(shared_id_home.values())
         self.memory_block_home.sort()
-        self.task_memory_block_mapping = list(task_shared_block_id_map.values())
+        self.task_memory_block_mapping = list(task_shared_id_map.values())
         self.task_memory_block_mapping.sort()
 
         # Initialize communications

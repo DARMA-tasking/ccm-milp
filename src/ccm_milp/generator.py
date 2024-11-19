@@ -265,7 +265,7 @@ class Generator:
 
         # Add the continuous variable to the problem
         self.problem += self.w_max
-        n_constraints_total = 0
+        n_constraints_equal, n_constraints_inequ = 0, 0
 
         # Add part of equation 14 constraining every task to a single rank
         start_time = time.perf_counter()
@@ -277,7 +277,7 @@ class Generator:
         # Report on added constraints
         end_time = time.perf_counter()
         print(f"  added {n_constraints_added} basic constraints for (14) in {end_time - start_time:0.4f}s")
-        n_constraints_total += n_constraints_added
+        n_constraints_equal += n_constraints_added
 
         # Add equations 18 and 19 for shared block constraints
         start_time = time.perf_counter()
@@ -298,7 +298,7 @@ class Generator:
         # Report on added constraints
         end_time = time.perf_counter()
         print(f"  added {n_constraints_added} shared blocks constraints for (18) & (19) in {end_time - start_time:0.4f}s")
-        n_constraints_total += n_constraints_added
+        n_constraints_inequ += n_constraints_added
 
         # Include rank memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
@@ -333,7 +333,7 @@ class Generator:
             # Report on added constraints
             end_time = time.perf_counter()
             print(f"  added {n_constraints_added} rank memory constraints for (20) in {end_time - start_time:0.4f}s")
-            n_constraints_total += n_constraints_added
+            n_constraints_inequ += n_constraints_added
 
         # Include node memory constraints when requested
         if self.config.node_memory_bound < math.inf:
@@ -372,7 +372,7 @@ class Generator:
             # Report on added constraints
             end_time = time.perf_counter()
             print(f"  added {n_constraints_added} node memory constraints for (21) in {end_time - start_time:0.4f}s")
-            n_constraints_total += n_constraints_added
+            n_constraints_inequ += n_constraints_added
 
         # Add communication constraints 27 28 29 in full model case
         if self.config.is_fwmp:
@@ -399,7 +399,7 @@ class Generator:
             # Report on added constraints
             end_time = time.perf_counter()
             print(f"  added {n_constraints_added} communications constraints for (27) -- (29) in {end_time - start_time:0.4f}s")
-            n_constraints_total += n_constraints_added
+            n_constraints_inequ += n_constraints_added
 
         # Add continuous constraints
         start_time = time.perf_counter()
@@ -447,7 +447,7 @@ class Generator:
         # Report on added constraints
         end_time = time.perf_counter()
         print(f"  added {n_constraints_added} continuous constraints for ({'2' if self.config.is_comcp else '3'}2) in {end_time - start_time:0.4f}s")
-        n_constraints_total += n_constraints_added
+        n_constraints_inequ += n_constraints_added
 
         # Add cluster-preserving constraints 16 when requested
         if self.config.preserve_clusters:
@@ -458,13 +458,13 @@ class Generator:
                 n_constraints_added += 1
             end_time = time.perf_counter()
             print(f"  added {n_constraints_added} cluster-preserving constraints for (16) in {end_time - start_time:0.4f}s")
-            n_constraints_total += n_constraints_added
+            n_constraints_equal += n_constraints_added
 
         # Compute theoretical number of constraints and check consistency
         n_constraints_theory = self.K + self.I * (self.K + 1) * (self.N + 1)
         if self.config.is_fwmp:
             n_constraints_theory += self.I * (3 * self.I * self.M + 1)
-        print(f"  {n_constraints_total} non-nil constraints added out of theoretical total of {n_constraints_theory}")
+        print(f"  {n_constraints_equal} equality constraints added out of theoretical total of {n_constraints_theory}")
 
     def write_lp_to_file(self, file_name : str):
         """Generate the problem file .pl"""
@@ -531,7 +531,7 @@ class Generator:
             if communications is not None and len(communications) > 0:
                 for communication in communications:
                     # Get from task id
-                    from_task_id = communication["from"]["id"]
+                    from_task_id = communication["from"]["seq_id"]
 
                     # Create dict
                     if new_communication_map.get(from_task_id) is None:
@@ -568,7 +568,7 @@ class Generator:
                     data_json["phases"][index_phase]["tasks"].append(task)
 
                     # Get task id
-                    from_task_id = task.get("entity").get("id")
+                    from_task_id = task.get("entity").get("seq_id")
 
                     # add communications
                     if new_communication_map.get(from_task_id) is not None:
