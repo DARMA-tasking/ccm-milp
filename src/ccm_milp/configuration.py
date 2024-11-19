@@ -33,51 +33,68 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import math
 from dataclasses import dataclass
 
 @dataclass
-class Config:
-    """Config object"""
-    is_fmwp: bool
+class Configuration:
+    """Configuration object"""
+    ranks_per_node: int
+    is_fwmp: bool
     is_comcp: bool
     alpha: float
     beta: float
     gamma: float
     delta: float
-    bounded_memory: bool
+    rank_memory_bound: float
+    node_memory_bound: float
     preserve_clusters: bool
 
     def __init__(
-        self,
-        is_fmwp: bool,
-        alpha: float,
-        beta: float,
-        gamma: float,
-        delta: float,
-        bounded_memory: bool,
-        preserve_clusters: bool,
-    ):
-        print(f"\n# Initializing {'FMWP' if is_fmwp else 'COMCP'} configuration with:")
-        print(f"  alpha = {alpha}")
-        print(f"  beta = {beta}")
-        print(f"  gamma = {gamma}")
-        print(f"  delta = {delta}")
-        print(f"  with{'' if bounded_memory else 'out'} rank memory upper bound")
-        if preserve_clusters:
-            print("  while preserving block clusters")
-        self.is_fmwp = is_fmwp
-        self.is_comcp = not is_fmwp
+            self,
+            ranks_per_node: int,
+            is_fwmp: bool,
+            alpha: float,
+            beta: float,
+            gamma: float,
+            delta: float,
+            rank_memory_bound: float,
+            node_memory_bound: float,
+            preserve_clusters: bool):
+
+        # Initialize member variables
+        self.ranks_per_node = ranks_per_node
+        self.is_fwmp = is_fwmp
+        self.is_comcp = not is_fwmp
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
-        self.bounded_memory = bounded_memory
+        self.rank_memory_bound = rank_memory_bound
+        self.node_memory_bound = node_memory_bound
         self.preserve_clusters = preserve_clusters
+
+        # Report member variables
+        print(f"\n# Configured {'Full Work Model' if is_fwmp else 'Compute-Only Memory-Constrained'} problem with:")
+        print(f"  {ranks_per_node} rank{'s' if ranks_per_node > 1 else ''} per node")
+        print(f"  alpha = {alpha}")
+        print(f"  beta = {beta}")
+        print(f"  gamma = {gamma}")
+        print(f"  delta = {delta}")
+        if rank_memory_bound < math.inf:
+            print(f"  rank memory bound = {rank_memory_bound}")
+        if node_memory_bound < math.inf:
+            print(f"  node memory bound = {node_memory_bound}")
+        if preserve_clusters:
+            print("  while preserving block clusters")
 
 @dataclass
 class DefaultParameters:
     """Default parameters"""
+    ranks_per_node: int = 1
     alpha: float = 1.0
     beta: float = 0.0
     gamma: float = 0.0
     delta: float = 0.0
+    rank_memory_bound: float = math.inf
+    node_memory_bound: float = math.inf

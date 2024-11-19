@@ -38,7 +38,7 @@ import os
 import sys
 import pulp
 
-from ccm_milp.generator import CcmMilpGenerator
+from ccm_milp.generator import Generator
 
 def run_batch(file_name: str, solver_name: str):
     """Run with a config file"""
@@ -68,8 +68,7 @@ def run_batch(file_name: str, solver_name: str):
 
     # Load problem file
     _, problem = pulp.LpProblem.fromMPS(file_name)
-
-    CcmMilpGenerator.solve_problem(problem, solver_name)
+    Generator.solve_problem(problem, solver_name)
 
 def main():
     """Main"""

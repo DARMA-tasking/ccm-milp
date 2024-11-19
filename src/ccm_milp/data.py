@@ -38,9 +38,12 @@ import json
 class Data:
     """Data file class used after parsing json data files"""
 
-    def __init__(self):
-        self.mems = 0
+    def __init__(self, ranks_per_node: int, rank_mem_bnd: float, node_mem_bnd: float):
+        self.ranks_per_node = ranks_per_node
+        self.rank_mem_bnd = rank_mem_bnd
+        self.node_mem_bnd = node_mem_bnd
         self.rank_mems = None
+        self.node_mems = None
         self.rank_working_bytes = None
         self.task_loads = None
         self.task_working_bytes = None
@@ -52,7 +55,7 @@ class Data:
         self.task_memory_block_mapping = None
         self.task_communications = None
 
-    def parse_json(self, data_files: list, rank_memory_bound : float):
+    def parse_json(self, data_files: list, verbose: bool):
         """Parse JSON data files"""
         tasks  = []
         tasks_working_bytes = []
@@ -92,7 +95,7 @@ class Data:
                         # Get data
                         time = task["time"]
                         index = task.get("entity").get("index")
-                        obj_id = task.get("entity").get("id")
+                        obj_id = task.get("entity").get("seq_id")
                         if task.get("user_defined") is None:
                             continue
                         shared_id = task.get("user_defined").get("shared_id")
@@ -119,21 +122,23 @@ class Data:
                         # Manage counter
                         task_id += 1
 
-                # Manage Communications data
+                # Manage communication data
                 if "communications" in data_json["phases"][0]:
                     for com in data_json["phases"][0]["communications"]:
                         comunications.append([
-                            com["from"]["id"],
-                            com["to"]["id"],
+                            com["from"]["seq_id"],
+                            com["to"]["seq_id"],
                             com["bytes"]
                         ])
 
-        # Set data
-        self.rank_mems = []
-        for _ in range(0, len(ranks)) :
-            self.rank_mems.append(self.mems)
-
+        # All ranks have same memory bound
+        self.rank_mems = [self.rank_mem_bnd] * len(ranks)
         self.rank_working_bytes =  list(ranks.values())
+
+        # All nodes have same memory bound
+        self.node_mems = [self.node_mem_bnd] * (len(ranks) // self.ranks_per_node)
+
+        # Initialize tasks
         self.task_loads = tasks
         self.task_working_bytes = tasks_working_bytes
         self.task_footprint_bytes = tasks_footprint_bytes
@@ -141,28 +146,29 @@ class Data:
         self.task_id = task_rank_obj_id
         self.task_id.sort()
 
+        # Initialize shared memory blocks
         self.memory_blocks = list(shared_id_map.values())
         self.memory_blocks.sort()
-
         self.memory_block_home = list(shared_id_home.values())
         self.memory_block_home.sort()
-
         self.task_memory_block_mapping = list(task_shared_id_map.values())
         self.task_memory_block_mapping.sort()
 
+        # Initialize communications
         self.task_communications = comunications
 
-        # @todo: this should be dependent on some verbose flag
-
-        # #  Print data object
-        # print(f"rank_mems:                 {self.rank_mems}")
-        # print(f"rank_working_bytes:        {self.rank_working_bytes}")
-        # print(f"task_loads:                {self.task_loads}")
-        # print(f"task_working_bytes:        {self.task_working_bytes}")
-        # print(f"task_footprint_bytes:      {self.task_footprint_bytes}")
-        # print(f"task_rank:                 {self.task_rank}")
-        # print(f"task_id:                   {self.task_id}")
-        # print(f"memory_blocks:             {self.memory_blocks}")
-        # print(f"memory_block_home:         {self.memory_block_home}")
-        # print(f"task_memory_block_mapping: {self.task_memory_block_mapping}")
-        # print(f"task_communications:       {self.task_communications}")
+        #  Print data object
+        if verbose:
+            print("\n# Data object:")
+            print(f"  rank_mems:                 {self.rank_mems}")
+            print(f"  node_mems:                 {self.node_mems}")
+            print(f"  rank_working_bytes:        {self.rank_working_bytes}")
+            print(f"  task_loads:                {self.task_loads}")
+            print(f"  task_working_bytes:        {self.task_working_bytes}")
+            print(f"  task_footprint_bytes:      {self.task_footprint_bytes}")
+            print(f"  task_rank:                 {self.task_rank}")
+            print(f"  task_id:                   {self.task_id}")
+            print(f"  memory_blocks:             {self.memory_blocks}")
+            print(f"  memory_block_home:         {self.memory_block_home}")
+            print(f"  task_memory_block_mapping: {self.task_memory_block_mapping}")
+            print(f"  task_communications:       {self.task_communications}")

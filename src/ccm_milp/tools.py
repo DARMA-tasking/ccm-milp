@@ -44,7 +44,20 @@ class Tools:
         return getattr(importlib.import_module(module, classname), classname)
 
     @staticmethod
-    def input_float(input_name: str, indent: str = "  ", default: float = 0.0):
+    def input_int(input_name: str, default: int = 0, indent: str = "  "):
+        """ Interactively retrieve input with integer type. """
+        value = input(f"{indent}value of {input_name} [{default}]? ")
+        if not value:
+            return default
+        try:
+            value = int(value)
+        except Exception as exc:
+            raise TypeError(
+                f"*** ERROR: incorrect entered {type(value)} for expected integer type value") from exc
+        return value
+
+    @staticmethod
+    def input_float(input_name: str, default: float = 0.0, indent: str = "  "):
         """ Interactively retrieve input with float type. """
         value = input(f"{indent}value of {input_name} [{default}]? ")
         if not value:
@@ -52,5 +65,6 @@ class Tools:
         try:
             value = float(value)
         except Exception as exc:
-            raise TypeError("incorrect input type: type(value)") from exc
+            raise TypeError(
+                f"*** ERROR: incorrect entered {type(value)} for expected integer float value") from exc
         return value
