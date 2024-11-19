@@ -71,6 +71,9 @@ class Data:
         comunications = []
         total_load = 0.0
 
+        for i in range(0, len(data_files)):
+            ranks[i] = 0
+
         for data_file in data_files:
             # Get rank from filename (/some/path/data.{rank}.json})
             rank: int = -1
@@ -86,10 +89,6 @@ class Data:
 
                 # Manage Tasks data
                 if "tasks" in data_json["phases"][0]:
-                    # Even if rank as no task we set mems to 0
-                    if len(data_json["phases"][0]["tasks"]) < 1:
-                        ranks[rank] = 0
-
                     # For each tasks
                     for task in data_json["phases"][0]["tasks"]:
                         # Get data
