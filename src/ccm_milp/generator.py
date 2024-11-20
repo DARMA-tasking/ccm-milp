@@ -300,6 +300,7 @@ class Generator:
         print(f"  added {n_constraints_added} shared blocks constraints (18) & (19) in {end_time - start_time:0.4f}s")
         n_constraints_inequ += n_constraints_added
 
+        n_constraints_notin = 0
         # Include rank memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
@@ -320,6 +321,7 @@ class Generator:
                         sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
                     ) <= (self.rank_M_inf[i] - self.rank_M_baseline[i])
                     n_constraints_added += 1
+                    n_constraints_notin += self.K - 1
                 else:
                     # Generate all K constraints otherwise
                     for k in range(self.K):
@@ -357,6 +359,7 @@ class Generator:
                     ) <= (self.node_M_inf[h] - sum(
                         self.rank_M_baseline[i] for i in range(h * self.Q, (h + 1) * self.Q)))
                     n_constraints_added += 1
+                    n_constraints_notin += self.K - 1
                 else:
                     # Generate all K constraints otherwise
                     for k in range(self.K):
@@ -470,10 +473,14 @@ class Generator:
             print(f"*** ERROR: incorrect number of equality constrainsts added: {n_constraints_equal} <> {n_constraints_theory}")
             sys.exit(1)
 
-        # Report on number of inequality constraints added
-        n_constraints_theory = self.I * (self.K + 1) * (self.N + 1)
+        # Report on computed vs theoretical maximum number of inequality constraints were added
+        n_constraints_theory = self.I * ((self.K + 1) * self.N + 1)
         if self.config.is_fwmp:
             n_constraints_theory += self.I * (3 * self.I * self.M + 1)
+        if self.config.rank_memory_bound < math.inf:
+            n_constraints_theory += self.I * self.K
+        if self.config.node_memory_bound < math.inf:
+            n_constraints_theory += self.I * self.K // self.Q
         print(f"  {n_constraints_inequ} inequality constraints added out of a theoretical maximum of {n_constraints_theory}")
 
     def write_lp_to_file(self, file_name : str):
