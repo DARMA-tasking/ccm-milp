@@ -34,6 +34,7 @@
 #
 
 import json
+import sys
 
 class Data:
     """Data file class used after parsing json data files"""
@@ -93,8 +94,19 @@ class Data:
                     for task in data_json["phases"][0]["tasks"]:
                         # Get data
                         time = task["time"]
-                        index = task.get("entity").get("index")
-                        obj_id = task.get("entity").get("seq_id")
+                        entity = task.get("entity")
+                        if entity is None:
+                            print (f"*** ERROR: task {task} has no associated entity")
+                            sys.exit(1)
+                        index = entity.get("index")
+                        try:
+                            obj_id = entity["id"]
+                        except:
+                            try:
+                                obj_id = entity["seq_id"]
+                            except:
+                                print (f"*** ERROR: entity {entity} neither has an id nor a seq_id")
+                                sys.exit(1)
                         if task.get("user_defined") is None:
                             continue
                         shared_id = task.get("user_defined").get("shared_id")
@@ -125,8 +137,8 @@ class Data:
                 if "communications" in data_json["phases"][0]:
                     for com in data_json["phases"][0]["communications"]:
                         comunications.append([
-                            com["from"]["seq_id"],
-                            com["to"]["seq_id"],
+                            com["from"].get("id", com.get("id", com.get("seq_id"))),
+                            com["to"].get("id", com.get("id", com.get("seq_id"))),
                             com["bytes"]
                         ])
 
