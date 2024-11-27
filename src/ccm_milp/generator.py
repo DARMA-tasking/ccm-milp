@@ -548,7 +548,8 @@ class Generator:
             if communications is not None and len(communications) > 0:
                 for communication in communications:
                     # Get from task id
-                    from_task_id = communication["from"]["seq_id"]
+                    from_task = communication["from"]
+                    from_task_id = from_task.get("id", from_task.get("seq_id"))
 
                     # Create dict
                     if new_communication_map.get(from_task_id) is None:
@@ -585,11 +586,12 @@ class Generator:
                     data_json["phases"][index_phase]["tasks"].append(task)
 
                     # Get task id
-                    from_task_id = task.get("entity").get("seq_id")
+                    entity = task.get("entity")
+                    task_id = entity.get("id", entity.get("seq_id"))
 
                     # add communications
-                    if new_communication_map.get(from_task_id) is not None:
-                        for commmunications in new_communication_map.get(from_task_id):
+                    if new_communication_map.get(task_id) is not None:
+                        for commmunications in new_communication_map.get(task_id):
                             if data_json["phases"][index_phase].get("commmunications") is None:
                                 data_json["phases"][index_phase]["commmunications"] = []
 
