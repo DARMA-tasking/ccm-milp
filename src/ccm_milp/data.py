@@ -34,6 +34,7 @@
 #
 
 import json
+import sys
 
 class Data:
     """Data file class used after parsing json data files"""
@@ -93,8 +94,15 @@ class Data:
                     for task in data_json["phases"][0]["tasks"]:
                         # Get data
                         time = task["time"]
-                        index = task.get("entity").get("index")
-                        obj_id = task.get("entity").get("seq_id")
+                        entity = task.get("entity")
+                        if entity is None:
+                            print (f"*** ERROR: task {task} has no associated entity")
+                            sys.exit(1)
+                        index = entity.get("index")
+                        obj_id = entity.get("id", entity.get("seq_id"))
+                        if obj_id is None:
+                            print (f"*** ERROR: entity {entity} neither has an id nor a seq_id")
+                            sys.exit(1)
                         if task.get("user_defined") is None:
                             continue
                         shared_id = task.get("user_defined").get("shared_id")
@@ -124,11 +132,18 @@ class Data:
                 # Manage communication data
                 if "communications" in data_json["phases"][0]:
                     for com in data_json["phases"][0]["communications"]:
+                        from_task = com.get("from")
+                        if from_task is None:
+                            print (f"*** ERROR: no origin task for communication {com}")
+                            sys.exit(1)
+                        to_task = com.get("to")
+                        if to_task is None:
+                            print (f"*** ERROR: no destination task for communication {com}")
+                            sys.exit(1)
                         comunications.append([
-                            com["from"]["seq_id"],
-                            com["to"]["seq_id"],
-                            com["bytes"]
-                        ])
+                            from_task.get("id", from_task.get("seq_id")),
+                            to_task.get("id", to_task.get("seq_id")),
+                            com["bytes"]])
 
         # All ranks have same memory bound
         self.rank_mems = [self.rank_mem_bnd] * len(ranks)
