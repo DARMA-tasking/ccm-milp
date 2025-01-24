@@ -143,12 +143,8 @@ class Examples:
                 ]
             ),
             ExampleConfig(
-                filename = 'ccm_example_no_sub_cluster',
-                classname = 'CCMExampleNoSubCluster'
-            ),
-            ExampleConfig(
-                filename = 'ccm_example_with_sub_cluster',
-                classname = 'CCMExampleWithSubCluster'
+                filename = 'sand2025-00006-example',
+                classname = 'SAND2025_00006_Example'
             ),
             ExampleConfig(
                 filename = 'illustration_1',

@@ -35,10 +35,8 @@
 
 import math
 
-class CCMExampleNoSubCluster:
-    """CCM Example: 2 ranks, 3 tasks, 2 shared blocks. With no sub cluster (no
-    task on different ranks with same shared block)
-    """
+class SAND2025_00006_Example:
+    """SAND2025-00006 Example: 2 ranks, 3 tasks, 2 shared blocks. """
 
     def __init__(self):
         self.rank_mems = [20] * 2
@@ -47,7 +45,6 @@ class CCMExampleNoSubCluster:
         self.task_loads = [2.0, 3.5, 5.0]
         self.task_working_bytes = [0] * 3
         self.task_footprint_bytes = [0] * 3
-        self.task_rank = [0, 0, 1]
         self.task_id = list(range(3))
         self.memory_blocks = [10000.0, 15000.0]
         self.memory_block_home = [0, 1]
