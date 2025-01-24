@@ -32,10 +32,12 @@
 #
 # Questions? Contact darma@sandia.gov
 #
+import math
 
 class Illustration1:
     def __init__(self):
-        self.rank_mems = [20]*2
+        self.rank_mems = [20] * 2
+        self.node_mems = [math.inf] * 2
         self.rank_working_bytes = [0, 0]
         self.task_loads = [10, 20, 10]
         self.task_working_bytes = [0, 0, 0]
