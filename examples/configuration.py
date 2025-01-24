@@ -157,6 +157,10 @@ class Examples:
             ExampleConfig(
                 filename = 'illustration_2',
                 classname = 'Illustration2'
+            ),
+            ExampleConfig(
+                filename = 'custom',
+                classname = 'Custom'
             )
         ]
 
