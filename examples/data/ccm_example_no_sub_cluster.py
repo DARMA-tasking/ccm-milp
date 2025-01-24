@@ -33,6 +33,8 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import math
+
 class CCMExampleNoSubCluster:
     """CCM Example: 2 ranks, 3 tasks, 2 shared blocks. With no sub cluster (no
     task on different ranks with same shared block)
@@ -40,6 +42,7 @@ class CCMExampleNoSubCluster:
 
     def __init__(self):
         self.rank_mems = [20] * 2
+        self.node_mems = [math.inf] * 2
         self.rank_working_bytes = [0] * 2
         self.task_loads = [2.0, 3.5, 5.0]
         self.task_working_bytes = [0] * 3
