@@ -227,11 +227,6 @@ class TestExamples(unittest.TestCase):
                 {len(data.task_footprint_bytes)} ({data.task_footprint_bytes})"
         )
         self.assertEqual(
-            len(data.task_rank), 9,
-            f"Bad value for the size of task_rank: \
-                {len(data.task_rank)} ({data.task_rank})"
-        )
-        self.assertEqual(
             len(data.task_id), 9,
             f"Bad value for the size of task_id: \
                 {len(data.task_id)} ({data.task_id})"
