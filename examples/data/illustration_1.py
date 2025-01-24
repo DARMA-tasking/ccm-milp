@@ -42,8 +42,6 @@ class Illustration1:
         self.task_loads = [10, 20, 10]
         self.task_working_bytes = [0, 0, 0]
         self.task_footprint_bytes = [0, 0, 0]
-        self.task_indices = [[0], [1], [2]]
-        self.task_rank = [0, 0, 0]
         self.task_id = [0, 1, 2]
         self.memory_blocks = [10,10]
         self.memory_block_home = [0,1]
