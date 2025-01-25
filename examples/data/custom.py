@@ -32,24 +32,22 @@
 #
 # Questions? Contact darma@sandia.gov
 #
-
 import math
 
-class CCMExampleNoSubCluster:
-    """CCM Example: 2 ranks, 3 tasks, 2 shared blocks. With no sub cluster (no
-    task on different ranks with same shared block)
-    """
+n_ranks = 1
+n_per_node = 1
+n_tasks = 1
 
+class Custom:
     def __init__(self):
-        self.rank_mems = [20] * 2
-        self.node_mems = [math.inf] * 2
-        self.rank_working_bytes = [0] * 2
-        self.task_loads = [2.0, 3.5, 5.0]
-        self.task_working_bytes = [0] * 3
-        self.task_footprint_bytes = [0] * 3
-        self.task_rank = [0, 0, 1]
-        self.task_id = list(range(3))
-        self.memory_blocks = [10000.0, 15000.0]
-        self.memory_block_home = [0, 1]
-        self.task_memory_block_mapping = [[0, 1], [2]]
-        self.task_communications = [[0, 1, 25000.0], [0, 2, 15000.0], [1, 2, 15000.0], [2, 1, 20000.0]]
+        self.node_mems = [math.inf] * (n_ranks // n_per_node)
+        self.rank_mems = [1] * n_ranks
+        self.rank_working_bytes = [0.0] * n_ranks
+        self.task_id = list(range(n_tasks))
+        self.task_loads = [1.0] * n_tasks
+        self.task_working_bytes = [1.0] * n_tasks
+        self.task_footprint_bytes = [0.0] * n_tasks
+        self.memory_blocks = []
+        self.memory_block_home = []
+        self.task_memory_block_mapping = []
+        self.task_communications = []

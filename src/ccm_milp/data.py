@@ -49,7 +49,6 @@ class Data:
         self.task_loads = None
         self.task_working_bytes = None
         self.task_footprint_bytes = None
-        self.task_rank = None
         self.task_id = None
         self.memory_blocks = None
         self.memory_block_home = None
@@ -63,7 +62,6 @@ class Data:
         tasks_footprint_bytes  = []
         task_indices  = []
         task_rank_obj_id  = []
-        tasks_rank  = []
         task_shared_id_map = {}
         shared_id_map = {}
         shared_id_home  = {}
@@ -119,7 +117,6 @@ class Data:
                         tasks_footprint_bytes.append(task_footprint_bytes)
                         tasks_working_bytes.append(task_working_bytes)
                         task_indices.append(index)
-                        tasks_rank.append( rank)
                         task_rank_obj_id.append(obj_id)
                         if shared_id not in task_shared_id_map:
                             task_shared_id_map[shared_id] = []
@@ -156,7 +153,6 @@ class Data:
         self.task_loads = tasks
         self.task_working_bytes = tasks_working_bytes
         self.task_footprint_bytes = tasks_footprint_bytes
-        self.task_rank = tasks_rank
         self.task_id = task_rank_obj_id
         self.task_id.sort()
 
@@ -180,7 +176,6 @@ class Data:
             print(f"  task_loads:                {self.task_loads}")
             print(f"  task_working_bytes:        {self.task_working_bytes}")
             print(f"  task_footprint_bytes:      {self.task_footprint_bytes}")
-            print(f"  task_rank:                 {self.task_rank}")
             print(f"  task_id:                   {self.task_id}")
             print(f"  memory_blocks:             {self.memory_blocks}")
             print(f"  memory_block_home:         {self.memory_block_home}")

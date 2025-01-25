@@ -69,7 +69,6 @@ class Generator:
         print(f"  total rank load = {sum_loads}, average rank load = {sum_loads/self.I}")
         self.task_M_overhead = input_problem.task_working_bytes
         self.task_M_baseline = input_problem.task_footprint_bytes
-        self.task_rank = input_problem.task_rank
         self.task_id = input_problem.task_id
 
         # Communication parameters
