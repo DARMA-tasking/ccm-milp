@@ -119,9 +119,9 @@ class Generator:
         # Call launch
         self.generate_problem()
 
-        if solver_name == 'gurobi':
+        if solver_name == "gurobi":
             base_file_path = os.path.join(os.path.dirname(__file__),"..", "problem")
-            if shutil.which('gurobi_cl') is not None:
+            if shutil.which("gurobi_cl") is not None:
                 subprocess.run([
                     "gurobi_cl",
                     f"Threads={multiprocessing.cpu_count()}",
