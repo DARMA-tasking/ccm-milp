@@ -39,6 +39,9 @@ import sys
 import json
 import typing
 import math
+import subprocess
+import multiprocessing
+import shutil
 import pulp
 from .configuration import Configuration, DefaultParameters
 from .data import Data
@@ -115,6 +118,20 @@ class Generator:
         """Generate the problem and solve it"""
         # Call launch
         self.generate_problem()
+
+        if solver_name == "gurobi":
+            base_file_path = os.path.join(os.path.dirname(__file__),"..", "problem")
+            if shutil.which("gurobi_cl") is not None:
+                subprocess.run([
+                    "gurobi_cl",
+                    f"Threads={multiprocessing.cpu_count()}",
+                    f"LogFile={base_file_path}.log",
+                    f"ResultFile={base_file_path}.sol",
+                    f"{base_file_path}.lp"
+                ])
+                return
+            else:
+                raise ValueError(f"Solver not found: {solver_name} (gurobi_cl executable not found)")
 
         # Check solver
         if solver_name not in pulp.listSolvers(onlyAvailable=True):
