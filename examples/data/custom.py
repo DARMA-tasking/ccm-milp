@@ -49,6 +49,6 @@ class Custom:
         self.task_working_bytes = [0.0] * n_tasks
         self.task_footprint_bytes = [0.0] * n_tasks
         self.memory_blocks = [1.0] * n_blocks
-        self.memory_block_home = []
+        self.memory_block_home = list(range(n_blocks))
         self.task_memory_block_mapping = [[0, 1, 4, 5], [2, 3, 6, 7], [8, 9, 12, 13], [10, 11, 14, 15], [16, 17, 20, 21], [18, 19, 22, 23], [24, 25, 28, 29], [26, 27, 30, 31], [32, 33, 36, 37], [34, 35, 38, 39], [40, 41, 44, 45], [48, 49, 52, 53], [50, 51, 54, 55], [56, 57, 60, 61], [58, 59, 62, 63], [64, 65, 68, 69], [66, 67, 70, 71]]
         self.task_communications = []
