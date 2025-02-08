@@ -86,10 +86,15 @@ class Generator:
         self.memory_block_home = input_problem.memory_block_home
         self.task_memory_block_mapping = input_problem.task_memory_block_mapping
 
+        # Check consistency of memory block parameters
+        if self.N != (l_mbh := len(self.memory_block_home)):
+            print(f"*** ERROR: number of memory block homes ({l_mbh}) does not match number of blocks ({self.N})")
+            sys.exit(1)
+
         # Check consistency of rank per node parameters
         self.Q = self.config.ranks_per_node
         if self.I % self.Q:
-            print(f"*** ERROR: number of ranks per node {self.Q} does not divide number of ranks {self.I}")
+            print(f"*** ERROR: number of ranks per node ({self.Q}) does not divide number of ranks ({self.I})")
             sys.exit(1)
         print(f"  Q = {self.Q} rank{'s' if self.Q > 1 else ''} per node (i.e. {self.I // self.Q} nodes)")
 
