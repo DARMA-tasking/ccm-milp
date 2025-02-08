@@ -42,7 +42,7 @@ n_blocks = 17
 class Custom:
     def __init__(self):
         self.node_mems = [math.inf] * (n_ranks // n_per_node)
-        self.rank_mems = [3.0] * n_ranks
+        self.rank_mems = [2.0] * n_ranks
         self.rank_working_bytes = [0.0] * n_ranks
         self.task_id = list(range(n_tasks))
         self.task_loads = [1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.5, 1.5, 0.0, 6.0, 6.0, 6.0, 1.5, 3.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 3.0, 3.0, 10.0, 10.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
