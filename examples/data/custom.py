@@ -46,7 +46,7 @@ class Custom:
         self.rank_working_bytes = [0.0] * n_ranks
         self.task_id = list(range(n_tasks))
         self.task_loads = [1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.5, 1.5, 0.0, 6.0, 6.0, 6.0, 1.5, 3.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 3.0, 3.0, 10.0, 10.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
-        self.task_working_bytes = [1.0] * n_tasks
+        self.task_working_bytes = [0.0] * n_tasks
         self.task_footprint_bytes = [0.0] * n_tasks
         self.memory_blocks = [1.0] * n_blocks
         self.memory_block_home = []
