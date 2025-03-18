@@ -96,7 +96,6 @@ For `SyntheticBlock` we also can retrieve in the `output` folder, after running 
 By default the configuration is:
 
 ```YAML
-alpha: 1
 beta:  0
 gamma: 0
 delta: 0
@@ -117,20 +116,20 @@ The example tested is `SyntheticBlock` with these differents configurations:
     * Configuration: `is_fwmp: false, bounded_memory: true`
     * Optimal objective value `2.00000000`
 
-* FWMP with alpha
+* FWMP with all rank alphas = 1.0
     * Configuration: `is_fwmp: true`
     * Optimal objective value `2.00000000`
 
-* FWMP with alpha-beta
+* FWMP with all rank alphas = 1.0 and beta
     * Configuration: `is_fwmp: true, beta: 1`
     * Optimal objective value `4.00000000`
 
 * Null case
-    * Configuration: `is_fwmp: true, alpha: 0, preserve_clusters: true`
+    * Configuration: `is_fwmp: true, all alphas: 0, preserve_clusters: true`
     * Optimal objective value `0.00000000`
 
 * Off node communication-only
-    * Configuration: `is_fwmp: true, alpha: 0, beta: 1`
+    * Configuration: `is_fwmp: true, all alphas: 0, beta: 1`
     * Optimal objective value `0.00000000`
 
 * Load no memory homing (delta: 0.1)
