@@ -58,7 +58,7 @@ class Examples:
     """Examples"""
 
     # Global variables
-    data_file_pattern = "data.*.json"
+    data_file_pattern = "synthetic-dataset-blocks.*.json"
     data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
 
     @staticmethod
