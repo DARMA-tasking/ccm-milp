@@ -34,20 +34,21 @@
 #
 import math
 
-n_ranks = 1
+n_ranks = 9
 n_per_node = 1
-n_tasks = 1
+n_tasks = 72
+n_blocks = 17
 
 class Custom:
     def __init__(self):
         self.node_mems = [math.inf] * (n_ranks // n_per_node)
-        self.rank_mems = [1] * n_ranks
+        self.rank_mems = [2.0] * n_ranks
         self.rank_working_bytes = [0.0] * n_ranks
         self.task_id = list(range(n_tasks))
-        self.task_loads = [1.0] * n_tasks
-        self.task_working_bytes = [1.0] * n_tasks
+        self.task_loads = [1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.5, 1.5, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.5, 1.5, 0.0, 6.0, 6.0, 6.0, 1.5, 3.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 3.0, 3.0, 10.0, 10.0, 1.0, 1.0, 3.0, 3.0, 3.0, 3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0]
+        self.task_working_bytes = [0.0] * n_tasks
         self.task_footprint_bytes = [0.0] * n_tasks
-        self.memory_blocks = []
-        self.memory_block_home = []
-        self.task_memory_block_mapping = []
+        self.memory_blocks = [1.0] * n_blocks
+        self.memory_block_home = list(range(n_blocks))
+        self.task_memory_block_mapping = [[0, 1, 4, 5], [2, 3, 6, 7], [8, 9, 12, 13], [10, 11, 14, 15], [16, 17, 20, 21], [18, 19, 22, 23], [24, 25, 28, 29], [26, 27, 30, 31], [32, 33, 36, 37], [34, 35, 38, 39], [40, 41, 44, 45], [48, 49, 52, 53], [50, 51, 54, 55], [56, 57, 60, 61], [58, 59, 62, 63], [64, 65, 68, 69], [66, 67, 70, 71]]
         self.task_communications = []
