@@ -62,6 +62,7 @@ class Generator:
         self.node_M_inf = input_problem.node_mems
         self.I = len(self.rank_M_inf)
         print(f"  I = {self.I} ranks")
+        self.rank_alpha = [1.0] * self.I
         self.rank_M_baseline = input_problem.rank_working_bytes
 
         # Task parameters
@@ -201,7 +202,7 @@ class Generator:
                             f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
                         ] = True
                         total_load += self.task_loads[k]
-                        total_work += self.config.alpha * self.task_loads[k]
+                        total_work += self.rank_alpha[i] * self.task_loads[k]
 
                 # Add communication costs when relevant
                 if self.psi:
@@ -443,7 +444,7 @@ class Generator:
                 other_machines = [j for j in range(self.I) if j != i]
 
                 # Compute unchanging terms in equation 30
-                alpha_term = self.config.alpha * sum(
+                alpha_term = self.rank_alpha[i] * sum(
                     self.task_loads[k] * self.chi[i, k] for k in range(self.K))
                 gamma_term = self.config.gamma * sum(
                     self.psi[i, i, p] * self.task_communications[p][2]
