@@ -122,8 +122,6 @@ class TestExamples(unittest.TestCase):
         """Test permutation """
         # Get example SyntheticBlock (id: 1)
         avail_examples = Examples.list()
-        print(Examples.list())
-        1/0
         synthetic_example = avail_examples[1]
 
         # Files
