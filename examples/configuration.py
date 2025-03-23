@@ -159,7 +159,7 @@ class Examples:
                         "file": "3-load-only.yaml",
                         "regexp": [
                             "Optimal - objective value 3.00000000",
-                            "Objective:  OBJ = 0 (MINimum)"
+                            "Objective:  OBJ = 3 (MINimum)"
                         ]
                     }
                 ]
