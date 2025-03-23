@@ -177,14 +177,14 @@ class Examples:
             data_file_pattern = "synthetic-dataset-blocks-alpha0.*.json"
         else:
             print(f"*  WARNING: ignoring unkown test case: {file}")
-        
+
         # Retrieve files corresponding to test case
         example_data_dir = os.path.join(Examples.data_dir, example_name)
         data_files = []
         for file in os.listdir(example_data_dir):
             if fnmatch.fnmatch(file, data_file_pattern):
                 data_files.append(
-                    os.path.join(example_data_dir, file)) 
+                    os.path.join(example_data_dir, file))
 
         # Sort list of files
         data_files.sort()
