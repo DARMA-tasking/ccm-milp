@@ -134,14 +134,14 @@ class Examples:
                 test = True,
                 test_configs = [
                     {
-                        "file": "1-null-case.yaml",
+                        "file": "2-null-case.yaml",
                         "regexp": [
                             "Optimal - objective value 0.00000000",
                             "Objective:  OBJ = 0 (MINimum)"
                         ]
                     },
                     {
-                        "file": "1-off-node-communication-only.yaml",
+                        "file": "2-off-node-communication-only.yaml",
                         "regexp": [
                             "Optimal - objective value 0.00000000",
                             "Objective:  OBJ = 0 (MINimum)"
