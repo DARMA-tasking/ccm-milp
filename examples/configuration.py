@@ -150,6 +150,21 @@ class Examples:
                 ]
             ),
             ExampleConfig(
+                filename = "synthetic_blocks_bad_rank0",
+                classname = "SyntheticBlocks",
+                json = Examples.list_data_files("synthetic_blocks_bad_rank0"),
+                test = True,
+                test_configs = [
+                    {
+                        "file": "3-load-only.yaml",
+                        "regexp": [
+                            "Optimal - objective value 3.00000000",
+                            "Objective:  OBJ = 0 (MINimum)"
+                        ]
+                    }
+                ]
+            ),
+            ExampleConfig(
                 filename = "sand2025-00006-example",
                 classname = "SAND2025_00006_Example"
             ),
@@ -175,6 +190,8 @@ class Examples:
             data_file_pattern = "synthetic-dataset-blocks.*.json"
         elif example_name == "synthetic_blocks_alpha0":
             data_file_pattern = "synthetic-dataset-blocks-alpha0.*.json"
+        elif example_name == "synthetic_blocks_bad_rank0":
+            data_file_pattern = "synthetic-dataset-blocks-bad-rank0.*.json"
         else:
             print(f"*  WARNING: ignoring unkown test case: {file}")
 

@@ -202,7 +202,7 @@ class Generator:
                         solution[f"Task {k} of load {self.task_loads[k]}"
                             f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
                         ] = True
-                        total_load += self.task_loads[k]
+                        total_load += self.rank_alphas[i] * self.task_loads[k]
                         total_work += self.rank_alphas[i] * self.task_loads[k]
 
                 # Add communication costs when relevant
@@ -433,7 +433,8 @@ class Generator:
         if self.config.is_comcp:
             # Add equation 22
             for i in range(self.I):
-                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
+                self.problem += self.rank_alphas[i] * sum(
+                    self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
                 n_constraints_added += 1
         elif self.config.is_fwmp:
             # Add equation 32
