@@ -67,103 +67,103 @@ class Examples:
         # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
         return [
             ExampleConfig(
-                filename = 'small',
-                classname = 'SmallProblem'
+                filename = "small",
+                classname = "SmallProblem"
             ),
             ExampleConfig(
-                filename = 'synthetic_blocks',
-                classname = 'SyntheticBlocks',
+                filename = "synthetic_blocks",
+                classname = "SyntheticBlocks",
                 json = Examples.list_data_files("synthetic_blocks"),
                 test = True,
                 test_configs = [
                     {
-                        'file': '1-load-only.yaml',
-                        'regexp': [
-                            'Optimal - objective value 2.00000000',
-                            'Objective:  OBJ = 2 (MINimum)'
+                        "file": "1-load-only.yaml",
+                        "regexp": [
+                            "Optimal - objective value 2.00000000",
+                            "Objective:  OBJ = 2 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-load-only-and-cluster.yaml',
-                        'regexp': [
-                            'Optimal - objective value 2.50000000',
-                            'Objective:  OBJ = 2.5 (MINimum)'
+                        "file": "1-load-only-and-cluster.yaml",
+                        "regexp": [
+                            "Optimal - objective value 2.50000000",
+                            "Objective:  OBJ = 2.5 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-load-only-and-memory-bound.yaml',
-                        'regexp': [
-                            'Optimal - objective value 2.00000000',
-                            'Objective:  OBJ = 2 (MINimum)'
+                        "file": "1-load-only-and-memory-bound.yaml",
+                        "regexp": [
+                            "Optimal - objective value 2.00000000",
+                            "Objective:  OBJ = 2 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-fwmp-with-alpha.yaml',
-                        'regexp': [
-                            'Optimal - objective value 2.00000000',
-                            'Objective:  OBJ = 2 (MINimum)'
+                        "file": "1-fwmp-with-alpha.yaml",
+                        "regexp": [
+                            "Optimal - objective value 2.00000000",
+                            "Objective:  OBJ = 2 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-fwmp-with-alpha-beta.yaml',
-                        'regexp': [
-                            'Optimal - objective value 4.00000000',
-                            'Objective:  OBJ = 4 (MINimum)'
+                        "file": "1-fwmp-with-alpha-beta.yaml",
+                        "regexp": [
+                            "Optimal - objective value 4.00000000",
+                            "Objective:  OBJ = 4 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-load-no-memory-homing-01.yaml',
-                        'regexp': [
-                            'Optimal - objective value 2.50000000',
-                            'Objective:  OBJ = 2.5 (MINimum)'
+                        "file": "1-load-no-memory-homing-01.yaml",
+                        "regexp": [
+                            "Optimal - objective value 2.50000000",
+                            "Objective:  OBJ = 2.5 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-load-no-memory-homing-03.yaml',
-                        'regexp': [
-                            'Optimal - objective value 4.00000000',
-                            'Objective:  OBJ = 4 (MINimum)'
+                        "file": "1-load-no-memory-homing-03.yaml",
+                        "regexp": [
+                            "Optimal - objective value 4.00000000",
+                            "Objective:  OBJ = 4 (MINimum)"
                         ]
                     }
                 ]
             ),
             ExampleConfig(
-                filename = 'synthetic_blocks',
-                classname = 'SyntheticBlocks',
+                filename = "synthetic_blocks_alpha0",
+                classname = "SyntheticBlocks",
                 json = Examples.list_data_files("synthetic_blocks_alpha0"),
                 test = True,
                 test_configs = [
                     {
-                        'file': '1-null-case.yaml',
-                        'regexp': [
-                            'Optimal - objective value 0.00000000',
-                            'Objective:  OBJ = 0 (MINimum)'
+                        "file": "1-null-case.yaml",
+                        "regexp": [
+                            "Optimal - objective value 0.00000000",
+                            "Objective:  OBJ = 0 (MINimum)"
                         ]
                     },
                     {
-                        'file': '1-off-node-communication-only.yaml',
-                        'regexp': [
-                            'Optimal - objective value 0.00000000',
-                            'Objective:  OBJ = 0 (MINimum)'
+                        "file": "1-off-node-communication-only.yaml",
+                        "regexp": [
+                            "Optimal - objective value 0.00000000",
+                            "Objective:  OBJ = 0 (MINimum)"
                         ]
                     }
                 ]
             ),
             ExampleConfig(
-                filename = 'sand2025-00006-example',
-                classname = 'SAND2025_00006_Example'
+                filename = "sand2025-00006-example",
+                classname = "SAND2025_00006_Example"
             ),
             ExampleConfig(
-                filename = 'illustration_1',
-                classname = 'Illustration1'
+                filename = "illustration_1",
+                classname = "Illustration1"
             ),
             ExampleConfig(
-                filename = 'illustration_2',
-                classname = 'Illustration2'
+                filename = "illustration_2",
+                classname = "Illustration2"
             ),
             ExampleConfig(
-                filename = 'custom',
-                classname = 'Custom'
+                filename = "custom",
+                classname = "Custom"
             )
         ]
 

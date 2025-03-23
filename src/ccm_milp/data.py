@@ -44,6 +44,7 @@ class Data:
         self.rank_mem_bnd = rank_mem_bnd
         self.node_mem_bnd = node_mem_bnd
         self.rank_mems = None
+        self.rank_alphas = {}
         self.node_mems = None
         self.rank_working_bytes = None
         self.task_loads = None
@@ -66,13 +67,13 @@ class Data:
         shared_id_map = {}
         shared_id_home  = {}
         task_id = 0
-        ranks = {}
         comunications = []
         total_load = 0.0
 
-        for i in range(0, len(data_files)):
-            ranks[i] = 0
+        # Initialize ranks
+        ranks = {i: 0 for i in range(len(data_files))}
 
+        # Iterate over data files
         for data_file in data_files:
             # Get rank from filename (/some/path/data.{rank}.json})
             rank: int = -1
@@ -85,8 +86,12 @@ class Data:
             with open(data_file, 'r', encoding="UTF-8") as f:
                 # Load data
                 data_json = json.load(f)
+                # Managage relevant rank metedata when available
+                if (md := data_json.get("metadata")):
+                    if (ra := md.get("rank_alpha")) is not None:
+                        self.rank_alphas[rank] = float(ra)
 
-                # Manage Tasks data
+                # Manage tasks data
                 if "tasks" in data_json["phases"][0]:
                     # For each tasks
                     for task in data_json["phases"][0]["tasks"]:
@@ -101,13 +106,20 @@ class Data:
                         if obj_id is None:
                             print (f"*** ERROR: entity {entity} neither has an id nor a seq_id")
                             sys.exit(1)
+
+                        # Handle user defined data when it exists
                         if task.get("user_defined") is None:
                             continue
-                        shared_id = task.get("user_defined").get("shared_id")
-                        shared_bytes = task.get("user_defined").get("shared_bytes")
-                        task_working_bytes = task.get("user_defined").get("task_working_bytes", 0)
-                        task_footprint_bytes = task.get("user_defined").get("task_footprint_bytes", 0)
-                        rank_working_bytes = task.get("user_defined").get("rank_working_bytes", 0)
+                        shared_id = task.get(
+                            "user_defined").get("shared_id")
+                        shared_bytes = task.get(
+                            "user_defined").get("shared_bytes")
+                        task_working_bytes = task.get(
+                            "user_defined").get("task_working_bytes", 0)
+                        task_footprint_bytes = task.get(
+                            "user_defined").get("task_footprint_bytes", 0)
+                        rank_working_bytes = task.get(
+                            "user_defined").get("rank_working_bytes", 0)
 
                         # Set data
                         ranks[rank] = rank_working_bytes

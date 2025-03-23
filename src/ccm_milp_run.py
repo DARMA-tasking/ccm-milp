@@ -196,7 +196,6 @@ def main():
         # Report solution to linear program when found
         permutation_file: str =  ccm_example.filename + "_" + "permutation.json"
         ccm_milp_generator.output_solution(permutation_file)
-        print()
 
         if len(ccm_example.json) > 0:
             # Call permute function
