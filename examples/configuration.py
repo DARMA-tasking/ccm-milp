@@ -57,7 +57,7 @@ class ExampleConfig:
 class Examples:
     """Examples"""
 
-    # Set data directorys
+    # Set data directories
     data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
 
     @staticmethod

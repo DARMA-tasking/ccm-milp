@@ -86,7 +86,7 @@ class Data:
             with open(data_file, 'r', encoding="UTF-8") as f:
                 # Load data
                 data_json = json.load(f)
-                # Managage relevant rank metedata when available
+                # Manage relevant rank metedata when available
                 if (md := data_json.get("metadata")):
                     if (ra := md.get("rank_alpha")) is not None:
                         self.rank_alphas[rank] = float(ra)
