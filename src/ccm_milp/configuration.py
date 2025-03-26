@@ -42,7 +42,6 @@ class Configuration:
     ranks_per_node: int
     is_fwmp: bool
     is_comcp: bool
-    alpha: float
     beta: float
     gamma: float
     delta: float
@@ -54,7 +53,6 @@ class Configuration:
             self,
             ranks_per_node: int,
             is_fwmp: bool,
-            alpha: float,
             beta: float,
             gamma: float,
             delta: float,
@@ -66,7 +64,6 @@ class Configuration:
         self.ranks_per_node = ranks_per_node
         self.is_fwmp = is_fwmp
         self.is_comcp = not is_fwmp
-        self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
         self.delta = delta
@@ -77,7 +74,6 @@ class Configuration:
         # Report member variables
         print(f"\n# Configured {'Full Work Model' if is_fwmp else 'Compute-Only Memory-Constrained'} problem with:")
         print(f"  {ranks_per_node} rank{'s' if ranks_per_node > 1 else ''} per node")
-        print(f"  alpha = {alpha}")
         print(f"  beta = {beta}")
         print(f"  gamma = {gamma}")
         print(f"  delta = {delta}")
@@ -92,7 +88,6 @@ class Configuration:
 class DefaultParameters:
     """Default parameters"""
     ranks_per_node: int = 1
-    alpha: float = 1.0
     beta: float = 0.0
     gamma: float = 0.0
     delta: float = 0.0

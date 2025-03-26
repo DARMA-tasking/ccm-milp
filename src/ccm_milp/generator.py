@@ -62,6 +62,8 @@ class Generator:
         self.node_M_inf = input_problem.node_mems
         self.I = len(self.rank_M_inf)
         print(f"  I = {self.I} ranks")
+        self.rank_alphas = [
+            input_problem.rank_alphas.get(i, 1.0) for i in range(self.I)]
         self.rank_M_baseline = input_problem.rank_working_bytes
 
         # Task parameters
@@ -200,8 +202,8 @@ class Generator:
                         solution[f"Task {k} of load {self.task_loads[k]}"
                             f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
                         ] = True
-                        total_load += self.task_loads[k]
-                        total_work += self.config.alpha * self.task_loads[k]
+                        total_load += self.rank_alphas[i] * self.task_loads[k]
+                        total_work += self.rank_alphas[i] * self.task_loads[k]
 
                 # Add communication costs when relevant
                 if self.psi:
@@ -431,7 +433,8 @@ class Generator:
         if self.config.is_comcp:
             # Add equation 22
             for i in range(self.I):
-                self.problem += sum(self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
+                self.problem += self.rank_alphas[i] * sum(
+                    self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
                 n_constraints_added += 1
         elif self.config.is_fwmp:
             # Add equation 32
@@ -443,7 +446,7 @@ class Generator:
                 other_machines = [j for j in range(self.I) if j != i]
 
                 # Compute unchanging terms in equation 30
-                alpha_term = self.config.alpha * sum(
+                alpha_term = self.rank_alphas[i] * sum(
                     self.task_loads[k] * self.chi[i, k] for k in range(self.K))
                 gamma_term = self.config.gamma * sum(
                     self.psi[i, i, p] * self.task_communications[p][2]
@@ -623,7 +626,6 @@ class Generator:
             # Create output filename
             output_permuted_filename = file_prefix + data_file.split("/").pop()
             output_permuted_file = os.path.join(Generator.output_dir(), output_permuted_filename)
-
             print(f"Generate permuted file: {output_permuted_file}, rank: {rank}")
 
             # Create output file
