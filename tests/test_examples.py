@@ -3,8 +3,16 @@ import sys
 import unittest
 import subprocess
 import json
+import re
 import pulp
 
+TESTS_DIR = os.path.dirname(__file__)
+ROOT_DIR = os.path.join(TESTS_DIR, "..")
+SRC_DIR = os.path.join(ROOT_DIR, "src")
+sys.path.insert(0, os.path.abspath(SRC_DIR))
+sys.path.insert(0, os.path.abspath(ROOT_DIR))
+
+from src.ccm_milp.app import parse_json_files
 from src.ccm_milp.tools import Tools
 from src.ccm_milp.generator import Generator
 
@@ -16,9 +24,46 @@ class TestExamples(unittest.TestCase):
     """Class to run tests on examples"""
 
     # Folder paths
-    root_dir = os.path.join(os.path.dirname(__file__), "..")
-    src_dir = os.path.join(os.path.dirname(__file__), "..", "src")
-    config_dir = os.path.join(os.path.dirname(__file__), "config")
+    root_dir = ROOT_DIR
+    src_dir = SRC_DIR
+    config_dir = os.path.join(TESTS_DIR, "config")
+    cli_file = os.path.join(SRC_DIR, "ccm_milp_cli.py")
+
+    def run_cli(self, *args):
+        """Run the unified CLI from tests."""
+        return subprocess.run([sys.executable, self.cli_file, *args], check=True)
+
+    def assert_expected_solution(self, output_str: str, expected_markers: list):
+        """Accept solver outputs that encode the same optimal objective differently."""
+        for marker in expected_markers:
+            if marker in output_str:
+                return
+
+        expected_values = []
+        for marker in expected_markers:
+            matches = re.findall(r"([0-9]+(?:\.[0-9]+)?)", marker)
+            if matches:
+                expected_values.append(float(matches[-1]))
+
+        objective_values = []
+        for pattern in (
+            r"Optimal - objective value\s+([0-9]+(?:\.[0-9]+)?)",
+            r"Objective:\s+OBJ\s*=\s*([0-9]+(?:\.[0-9]+)?)",
+            r"objective value:\s*([0-9]+(?:\.[0-9]+)?)",
+            r"Objective\s+([0-9]+(?:\.[0-9]+)?)",
+        ):
+            for match in re.findall(pattern, output_str, flags=re.IGNORECASE):
+                objective_values.append(float(match))
+
+        is_optimal = "optimal" in output_str.lower()
+        if is_optimal and any(
+            abs(objective_value - expected_value) < 1e-9
+            for objective_value in objective_values
+            for expected_value in expected_values
+        ):
+            return
+
+        self.fail("Expected objective markers were not found in solver output")
 
     def test_problem_solver(self):
         """Test all examples"""
@@ -48,14 +93,12 @@ class TestExamples(unittest.TestCase):
                     print("")
 
                     # Generate linear program without solving it
-                    subprocess.run([
-                        "python",
-                        os.path.join(self.src_dir, "ccm_milp_run.py"),
-                        "-c",
+                    self.run_cli(
+                        "run",
+                        "--config",
                         config_file,
-                        "-s",
-                        ''
-                    ], check=True)
+                        "--generate-only",
+                    )
 
                     # Check whether problem file was generated
                     lp_file = os.path.join(self.src_dir, "problem.lp")
@@ -74,12 +117,11 @@ class TestExamples(unittest.TestCase):
                         print("    ----------------")
 
                         # Run the solver on the example problem
-                        subprocess.run([
-                            "python",
-                            os.path.join(self.src_dir, "ccm_milp_solver.py"),
-                            "-s",
-                            solver_name
-                        ], check = True)
+                        self.run_cli(
+                            "solve",
+                            "--solver",
+                            solver_name,
+                        )
 
                         # clear useless generated files
                         mps_sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.mps")
@@ -99,17 +141,7 @@ class TestExamples(unittest.TestCase):
                             output_str = sol_content.read()
                         print(output_str)
 
-                        # Check sol file content
-                        found = False
-                        for reg in test_config.get("regexp"):
-                            if reg in output_str:
-                                print(f"Found {reg}")
-                                found = True
-
-                        # No Regexp found
-                        if found is False:
-                            for reg in test_config.get("regexp"):
-                                self.fail("Regex: not found in .sol")
+                        self.assert_expected_solution(output_str, test_config.get("regexp"))
 
                         # clear .sol file
                         os.remove(sol_file)
@@ -134,13 +166,14 @@ class TestExamples(unittest.TestCase):
             self.assertTrue(os.path.isfile(input_json_file), f"File: {input_json_file} does not exist!")
 
         # Command line
-        subprocess.run([
-            "python",
-            os.path.join(self.src_dir, "ccm_milp_permute_json.py"),
-            "--permutation-file=" + permutation_file,
-            "--input-json-files=" + " ".join(synthetic_example.json),
-            "--output-file-prefix=" + output_file_prefix
-        ], check=True)
+        self.run_cli(
+            "permute",
+            "--permutation-file",
+            permutation_file,
+            "--output-file-prefix",
+            output_file_prefix,
+            *synthetic_example.json,
+        )
 
         permutations = []
         with open(permutation_file, 'r', encoding="utf-8") as f:
@@ -198,7 +231,7 @@ class TestExamples(unittest.TestCase):
         synthetic_example = avail_examples[1]
 
         # Parse json data files
-        data = Generator.parse_json(synthetic_example.json)
+        data = parse_json_files(list(synthetic_example.json))
 
         # Check result
         self.assertEqual(

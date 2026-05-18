@@ -7,84 +7,95 @@ A Python program to build and solve the CCM-MILP problems, with a set of example
 * Python 3.x
 
 ## Execution
-*From the folder `src`*
+Run commands from the repository root.
 
-### Generate and solve a problem (and apply permutation on Synthetic Blocks example):
-Either in interactive mode:
+### Unified CLI
+
+List built-in examples:
 
 ```shell
-python ccm_milp_full.py
+python src/ccm_milp_cli.py list-examples
 ```
 
-or in direct mode with a configuration file in YAML format:
+Generate and solve a built-in example:
 
 ```shell
-python ccm_milp_full.py -c "<configuration file name>"
+python src/ccm_milp_cli.py run --example synthetic_blocks --solver PULP_CBC_CMD
 ```
 
-or with a specific solver installed on the machine:
+Generate only from a YAML configuration file:
 
 ```shell
-python ccm_milp_full.py -s "<solver name: COIN_CMD, GLPK_CMD, PULP_CBC_CMD>"
+python src/ccm_milp_cli.py run --config tests/config/1-load-only.yaml --generate-only
 ```
 
-By default the solver used is **PULP_CBC_CMD**
-
-### Generate problem files (.pl and .mps):
-Either in interactive mode:
+Generate and solve from an external JSON file stem such as `prefix.0.json`, `prefix.1.json`, ...:
 
 ```shell
-python ccm_milp_problem.py
+python src/ccm_milp_cli.py run --file-stem /abs/path/data/prefix --solver PULP_CBC_CMD
 ```
 
-or in direct mode with a configuration file in YAML format:
+Generate and solve from explicit JSON files:
 
 ```shell
-python ccm_milp_problem.py -c "<configuration file name>"
+python src/ccm_milp_cli.py run \
+    --json-file /abs/path/data.0.json \
+    --json-file /abs/path/data.1.json \
+    --solver PULP_CBC_CMD
 ```
 
-### Solve a problem file (.mps):
-Solve the generated problem.mps file generated before:
+The default solver is **PULP_CBC_CMD** unless `--generate-only` is used.
+
+### Solve an Existing `.mps` File
+
+Solve the generated `problem.mps` file:
 
 ```shell
-python ccm_milp_solver.py
+python src/ccm_milp_cli.py solve
 ```
 
-Solve a specific .mps problem file:
+Solve a specific `.mps` file with a specific solver:
 
 ```shell
-python ccm_milp_solver.py -p "<problem file .mps>"
+python src/ccm_milp_cli.py solve --problem /abs/path/problem.mps --solver GLPK_CMD
 ```
 
-Solve with a specific solver installed on the machine:
+### Permute JSON Data Files
+
+Permute JSON data and create output files:
 
 ```shell
-python ccm_milp_solver.py -s "<solver name: COIN_CMD, GLPK_CMD, PULP_CBC_CMD>"
+python src/ccm_milp_cli.py permute \
+    --permutation-file /abs/path/permutation.json \
+    /abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json
 ```
 
-
-### Permutation for JSON data files using a permutation file:
-*The seprator for `--input-json-files` files is a space*
-
-Permute json data and create output files:
+Specify a prefix for the output files:
 
 ```shell
-python ccm_milp_permute_json.py --permutation-file="/abs/path/permutation.json" --input-json-files="/abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json ..."
-```
-
-Permute json data and create output files using a prefix for output files:
-
-```shell
-python ccm_milp_permute_json.py --output-file-prefix="permuted_" --permutation-file="/abs/path/permutation.json" --input-json-files="/abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json ..."
+python src/ccm_milp_cli.py permute \
+    --permutation-file /abs/path/permutation.json \
+    --output-file-prefix permuted_ \
+    /abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json
 ```
 
 ### Parse JSON
-*The seprator for files is a space*
 
-Parse json data and output result into the terminal:
+Parse JSON data and print the derived CCM-MILP data summary:
 
 ```shell
-python ccm_milp_parse_json.py --input-json-files="/abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json ..."
+python src/ccm_milp_cli.py parse-json /abs/path/data.0.json /abs/path/data.1.json /abs/path/data.2.json
+```
+
+### Legacy Wrappers
+
+The legacy scripts still exist, but they now use the same non-interactive API underneath:
+
+```shell
+python src/ccm_milp_run.py --config tests/config/1-load-only.yaml --generate-only
+python src/ccm_milp_solver.py --problem /abs/path/problem.mps --solver PULP_CBC_CMD
+python src/ccm_milp_parse_json.py /abs/path/data.0.json /abs/path/data.1.json
+python src/ccm_milp_permute_json.py --permutation-file /abs/path/permutation.json /abs/path/data.0.json /abs/path/data.1.json
 ```
 
 ## What to Expect:

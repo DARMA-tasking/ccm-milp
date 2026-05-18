@@ -36,48 +36,41 @@
 import argparse
 import sys
 
-from ccm_milp.generator import Generator
-
-# Globales variables
-file_separator: str = ' '
-
-def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: str):
-    """Run permutation"""
-    # Read input json data
-    datafiles = file_input_json_files.split(file_separator)
-
-    # Call permute function
-    Generator.permute(
-        permutation_file = permutation_file,
-        data_files = datafiles,
-        file_prefix = file_prefix
-    )
+from ccm_milp.app import permute_json_files
 
 def main():
     """Main"""
 
-    # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP permute",
         description="Permute data in function of assignements"
     )
 
     parser.add_argument("-f", "--permutation-file", help="The permutation file in JSON", default=None)
-    parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
+    parser.add_argument("json_files", nargs="*", help="Input JSON files")
+    parser.add_argument("-i", "--input-json-files", help="Legacy space-separated input JSON files", default=None)
+    parser.add_argument(
+        "--input-json-file",
+        action="append",
+        dest="json_file_args",
+        default=[],
+        help="Input JSON file. Repeat for multiple files.",
+    )
     parser.add_argument("-o", "--output-file-prefix", help="The output file prefix", default="permuted_")
 
-    # Get options
     args = parser.parse_args()
-    permutation_file = args.permutation_file
-    input_json_files = args.input_json_files
-    output_file_prefix = args.output_file_prefix
+    input_files = list(args.json_files)
+    input_files.extend(args.json_file_args)
+    if args.input_json_files:
+        input_files.extend(args.input_json_files.split())
 
-    # Retrieve parameters in batch mode
-    if permutation_file and output_file_prefix and input_json_files:
-        run_batch(permutation_file, input_json_files, output_file_prefix)
-    else:
-        print(f"Missing aruments: (permutation-file = {permutation_file} / input-json-files = {input_json_files})")
-        sys.exit(1)
+    if not args.permutation_file or not input_files:
+        parser.exit(1, "*** ERROR: Missing permutation file or input JSON files.\n")
+
+    try:
+        permute_json_files(args.permutation_file, input_files, args.output_file_prefix)
+    except Exception as exc:  # pylint: disable=broad-except
+        parser.exit(1, f"*** ERROR: {exc}\n")
 
 if __name__ == "__main__":
     main()

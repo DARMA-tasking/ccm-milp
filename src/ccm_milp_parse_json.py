@@ -35,38 +35,43 @@
 
 import argparse
 import sys
-from ccm_milp.generator import Generator
 
-# Globales variables
-file_separator: str = ' '
-
-def run_batch(file_input_json_files: str):
-    """Run permutation"""
-    # Read input json data
-    datafiles = file_input_json_files.split(file_separator)
-
-    # Call permute function
-    Generator.parse_json(data_files = datafiles)
+from ccm_milp.app import parse_json_files
 
 def main():
     """Main"""
 
-    # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP parse json",
         description="Parse json data to a python class used by problem solver")
-    parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
+    parser.add_argument("json_files", nargs="*", help="Input JSON files")
+    parser.add_argument(
+        "-i",
+        "--input-json-files",
+        help="Legacy space-separated input JSON files",
+        default=None,
+    )
+    parser.add_argument(
+        "--input-json-file",
+        action="append",
+        dest="json_file_args",
+        default=[],
+        help="Input JSON file. Repeat for multiple files.",
+    )
 
-    # Get options
     args = parser.parse_args()
-    input_json_files = args.input_json_files
+    input_files = list(args.json_files)
+    input_files.extend(args.json_file_args)
+    if args.input_json_files:
+        input_files.extend(args.input_json_files.split())
 
-    # Retrieve parameters in batch mode
-    if input_json_files:
-        run_batch(input_json_files)
-    else:
-        print(f"Missing aruments: (input-json-files = {input_json_files})")
-        sys.exit(1)
+    if not input_files:
+        parser.exit(1, "*** ERROR: Missing input JSON files.\n")
+
+    try:
+        parse_json_files(input_files)
+    except Exception as exc:  # pylint: disable=broad-except
+        parser.exit(1, f"*** ERROR: {exc}\n")
 
 if __name__ == "__main__":
     main()

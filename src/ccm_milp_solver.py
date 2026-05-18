@@ -36,46 +36,13 @@
 import argparse
 import os
 import sys
-import pulp
 
-from ccm_milp.generator import Generator
-
-def run_batch(file_name: str, solver_name: str):
-    """Run with a config file"""
-
-    # Init
-    error = False
-
-    # Check problem file
-    if os.path.isfile(file_name) is False:
-        error = True
-        print("*** File not found: ", file_name)
-    else:
-        print("# FileName: ", file_name)
-
-    # Check solver
-    if solver_name not in pulp.listSolvers(onlyAvailable=True):
-        error = True
-        print("*** Solver not found: ", solver_name)
-        print("*** Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
-    else:
-        print("# Solver: ", solver_name)
-
-    # Has error
-    if error is True:
-        print("")
-        sys.exit(1)
-
-    # Load problem file
-    _, problem = pulp.LpProblem.fromMPS(file_name)
-    Generator.solve_problem(problem, solver_name)
+from ccm_milp.app import solve_problem_file
 
 def main():
     """Main"""
-    # Init
     default_mps = os.path.join(os.path.dirname(__file__), "problem.mps")
 
-    # Manage options
     parser = argparse.ArgumentParser(
         prog="CCM-MILP Solver",
         description="Generate & solve a problem"
@@ -83,16 +50,11 @@ def main():
     parser.add_argument("-p", "--problem", help="The problem.mps file", default=default_mps)
     parser.add_argument("-s", "--solver", help="The problem solver", default="PULP_CBC_CMD")
 
-    # Get options
     args = parser.parse_args()
-    file_name = args.problem
-    solver_name = args.solver
-
-    # Retrieve parameters in batch mode
-    if file_name:
-        run_batch(file_name, solver_name)
-    else:
-        sys.exit(1)
+    try:
+        solve_problem_file(args.problem, args.solver)
+    except Exception as exc:  # pylint: disable=broad-except
+        parser.exit(1, f"*** ERROR: {exc}\n")
 
 if __name__ == "__main__":
     main()
