@@ -5,10 +5,10 @@ import subprocess
 import json
 import pulp
 
-from src.ccm_milp.tools import Tools
-from src.ccm_milp.generator import Generator
+from ccm_milp.tools import Tools
+from ccm_milp.generator import Generator
 
-# Add global path
+# Add repository root to path for the examples registry (wip--will remove later)
 sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../..")))
 Examples = Tools.import_class("examples.configuration", "Examples")
 
