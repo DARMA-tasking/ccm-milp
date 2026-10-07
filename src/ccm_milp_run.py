@@ -38,11 +38,9 @@ import re
 import argparse
 import importlib
 import sys
-import typing
-import yaml
 
 # Import classes
-from ccm_milp.configuration import Configuration, DefaultParameters
+from ccm_milp.configuration import Configuration, load_yaml
 from ccm_milp.generator import Generator
 from ccm_milp.tools import Tools
 
@@ -54,7 +52,7 @@ Examples = Tools.import_class("examples.configuration", "Examples")
 avail_examples = Examples.list()
 
 # Default CCM parameter values
-DP: typing.Final = DefaultParameters()
+DP = Configuration()
 
 def run_interactive():
     """Run with interactive selection of example"""
@@ -66,7 +64,7 @@ def run_interactive():
 
     example_id = int(input("  example index: "))
     if example_id not in range(len(avail_examples)):
-        raise ValueError(f"Unvailable example index: {example_id}")
+        raise ValueError(f"Unavailable example index: {example_id}")
 
     # Interactively get and return problem configuration
     print("\n# Model configuration:")
@@ -76,64 +74,26 @@ def run_interactive():
         delta = Tools.input_float("delta")
     else:
         beta, gamma, delta = DP.beta, DP.gamma, DP.delta
-    return [
-        avail_examples[example_id],
-        Tools.input_int("ranks per node", DP.ranks_per_node),
-        is_fwmp, beta, gamma, delta,
-        Tools.input_float("rank memory bound", DP.rank_memory_bound),
-        Tools.input_float("node memory bound", DP.node_memory_bound),
-        input("  preserve clusters [y/N]? ") == "y",
-        input("  verbose output [y/N]? ") == "y"]
+    config = Configuration(
+        ranks_per_node=Tools.input_int("ranks per node", DP.ranks_per_node),
+        is_fwmp=is_fwmp, beta=beta, gamma=gamma, delta=delta,
+        rank_memory_bound=Tools.input_float("rank memory bound", DP.rank_memory_bound),
+        node_memory_bound=Tools.input_float("node memory bound", DP.node_memory_bound),
+        preserve_clusters=input("  preserve clusters [y/N]? ") == "y")
+    verbose = input("  verbose output [y/N]? ") == "y"
+    return avail_examples[example_id], '', verbose, config
 
 def run_batch(file_name: str):
     """Run with a config file"""
-
-    # Try to read YAML configuration file
-    parameters = {}
-    try:
-        with open(file_name, 'r', encoding="utf-8") as f:
-            parameters = yaml.safe_load(f)
-    except: # pylint: disable=bare-except
-        print ("*** ERROR: Could not parse", file_name)
-        sys.exit(1)
-
-    # Parse parameters
-    print("# Model configuration:")
-    c_bool, c_int, c_float, ccm_example, file_stem = {}, {}, {}, None, ''
-    for k, v in parameters.items():
-        print(f"  {k}: {v}")
-        if k in ("is_fwmp", "bounded_memory", "preserve_clusters", "verbose"):
-            c_bool[k] = bool(v)
-        elif k in ("ranks_per_node"):
-            c_int[k] = int(v)
-        elif k in ("beta", "gamma", "delta", "rank_memory_bound", "node_memory_bound"):
-            c_float[k] = float(v)
-        elif k == "example_id":
-            ccm_example = avail_examples[int(v)]
-        elif k in ("file_stem"):
-            file_stem = str(v)
-        else:
-            print ("*** ERROR: Incorrect key:", k)
-            sys.exit(1)
-
-    # Retrieve and return problem configuration
+    params = load_yaml(file_name)
+    example_id = params.pop("example_id", None)
+    ccm_example = avail_examples[int(example_id)] if example_id is not None else None
+    file_stem = str(params.pop("file_stem", ''))
+    verbose = bool(params.pop("verbose", False))
     if not ccm_example and file_stem == '':
         print ("*** ERROR: No CCM example was defined or file_stem provided")
         sys.exit(1)
-
-    return [
-        ccm_example,
-        c_int.get("ranks_per_node", DP.ranks_per_node),
-        c_bool.get("is_fwmp", False),
-        c_float.get("beta", DP.beta),
-        c_float.get("gamma", DP.gamma),
-        c_float.get("delta", DP.delta),
-        c_float.get("rank_memory_bound", DP.rank_memory_bound),
-        c_float.get("node_memory_bound", DP.node_memory_bound),
-        c_bool.get("preserve_clusters", False),
-        c_bool.get("verbose", False),
-        file_stem
-    ]
+    return ccm_example, file_stem, verbose, Configuration.from_dict(params)
 
 def get_num_ranks(file_prefix : str, file_suffix : str) -> int:
     data_dir = f"{os.sep}".join(file_prefix.split(os.sep)[:-1])
@@ -166,10 +126,11 @@ def main():
 
     # Retrieve parameters either interactively or in batch mode
     if file_name:
-        ccm_example, rpn, fwmp, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose, file_stem = run_batch(file_name)
+        ccm_example, file_stem, verbose, config = run_batch(file_name)
     else:
-        ccm_example, rpn, fwmp, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl, verbose = run_interactive()
-        file_stem = ''
+        ccm_example, file_stem, verbose, config = run_interactive()
+    print(f"\n{config.summary()}")
+    rpn, rank_mem_bnd, node_mem_bnd = config.ranks_per_node, config.rank_memory_bound, config.node_memory_bound
 
     # Manage available examples with JSON
     data = None
@@ -186,9 +147,7 @@ def main():
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
     # Generate linear program and solve it when requested
-    ccm_milp_generator = Generator(
-        Configuration(rpn, fwmp, beta, gamma, delta, rank_mem_bnd, node_mem_bnd, pr_cl),
-        data)
+    ccm_milp_generator = Generator(config, data)
     if solver_name:
         # Generate and solve
         ccm_milp_generator.generate_problem_and_solve(solver_name)
