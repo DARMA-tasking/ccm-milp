@@ -35,15 +35,23 @@
 
 import time
 import os
-import sys
-import json
 import math
-import subprocess
-import multiprocessing
-import shutil
+from dataclasses import dataclass
+from typing import Optional
 import pulp
 from .configuration import Configuration
-from .data import find_rank_files, rank_of_file
+
+@dataclass
+class Solution:
+    """Result of solving the problem"""
+    status: str
+    objective: Optional[float]
+    assignments: list  # rank of each task
+
+    @property
+    def is_optimal(self) -> bool:
+        """Whether an optimal solution was found"""
+        return self.status == pulp.LpStatus[pulp.LpStatusOptimal]
 
 class Generator:
     """Manage CCM-MILP problem: setup, generate, and solve"""
@@ -86,14 +94,12 @@ class Generator:
 
         # Check consistency of memory block parameters
         if self.N != (l_mbh := len(self.memory_block_home)):
-            print(f"*** ERROR: number of memory block homes ({l_mbh}) does not match number of blocks ({self.N})")
-            sys.exit(1)
+            raise ValueError(f"number of memory block homes ({l_mbh}) does not match number of blocks ({self.N})")
 
         # Check consistency of rank per node parameters
         self.Q = self.config.ranks_per_node
         if self.I % self.Q:
-            print(f"*** ERROR: number of ranks per node ({self.Q}) does not divide number of ranks ({self.I})")
-            sys.exit(1)
+            raise ValueError(f"number of ranks per node ({self.Q}) does not divide number of ranks ({self.I})")
         print(f"  Q = {self.Q} rank{'s' if self.Q > 1 else ''} per node (i.e. {self.I // self.Q} nodes)")
 
         # Tasks to ranks assignment matrix
@@ -111,39 +117,32 @@ class Generator:
         # The linear problem
         self.problem = None
 
-    def generate_problem(self):
-        """Generate the problem"""
+    def generate_problem(self, output_dir: Optional[str] = None):
+        """Generate the problem, writing problem.lp and problem.mps to output_dir when given"""
         self.setup_milp()
-        self.write_lp_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.lp"))
-        self.write_mps_to_file(os.path.join(os.path.dirname(__file__),"..", "problem.mps"))
+        if output_dir is not None:
+            os.makedirs(output_dir, exist_ok=True)
+            self.problem.writeLP(os.path.join(output_dir, "problem.lp"))
+            self.problem.writeMPS(os.path.join(output_dir, "problem.mps"))
 
-    def generate_problem_and_solve(self, solver_name: str):
-        """Generate the problem and solve it"""
-        # Call launch
-        self.generate_problem()
-
-        if solver_name == "gurobi":
-            base_file_path = os.path.join(os.path.dirname(__file__),"..", "problem")
-            if shutil.which("gurobi_cl") is not None:
-                subprocess.run([
-                    "gurobi_cl",
-                    f"Threads={multiprocessing.cpu_count()}",
-                    f"LogFile={base_file_path}.log",
-                    f"ResultFile={base_file_path}.sol",
-                    f"{base_file_path}.lp"
-                ])
-                return
-            else:
-                raise ValueError(f"Solver not found: {solver_name} (gurobi_cl executable not found)")
-
-        # Check solver
-        if solver_name not in pulp.listSolvers(onlyAvailable=True):
-            print("# Available LP solvers: ", pulp.listSolvers(onlyAvailable=True))
-            raise ValueError(f"Solver not found: {solver_name}")
-
-        # Execute solver
+    def solve(self, solver_name: str) -> Solution:
+        """Solve the generated problem with a PuLP solver"""
+        available = pulp.listSolvers(onlyAvailable=True)
+        if solver_name not in available:
+            raise ValueError(f"solver {solver_name} is not available; available solvers: {', '.join(available)}")
         print("\n# Solver:", solver_name)
-        self.solve_problem(self.problem, solver_name)
+        self.problem.solve(pulp.getSolver(solver_name))
+        status = pulp.LpStatus[self.problem.status]
+        if self.problem.status != pulp.LpStatusOptimal:
+            return Solution(status, None, [])
+
+        # Some solvers do not output a solution that is exactly 1 albeit binary
+        assignments = [-1] * self.K
+        for i in range(self.I):
+            for k in range(self.K):
+                if pulp.value(self.chi[i, k]) > 0.5:
+                    assignments[k] = i
+        return Solution(status, pulp.value(self.w_max), assignments)
 
     def verify_and_tally_edge(self, r_snd: int, r_rcv: int, c_ind: int):
         """Check psi-chi consistency and return weight of existing edges"""
@@ -171,10 +170,10 @@ class Generator:
         # Return communication weight
         return comm[2]
 
-    def output_solution(self, permutation_file: str = "permutation.json"):
-        """Generate output report"""
-        if self.problem.status == pulp.LpStatusOptimal:
-            solution = {"w_max": pulp.value(self.w_max)}
+    def report_solution(self, solution: Solution):
+        """Print a per-task and per-rank report of the solution"""
+        if solution.is_optimal:
+            details = {"w_max": pulp.value(self.w_max)}
             machine_memory_blocks_assigned = [[] for i in range(self.I)]
             rank_totals = []
             total_unhomed_blocks = 0
@@ -195,7 +194,7 @@ class Generator:
                 total_work = delta_cost
                 for k in range(self.K):
                     if pulp.value(self.chi[i, k]) == 1:
-                        solution[f"Task {k} of load {self.task_loads[k]}"
+                        details[f"Task {k} of load {self.task_loads[k]}"
                             f" and memory blocks {machine_memory_blocks_assigned[i]} assigned to rank {i}"
                         ] = True
                         total_load += self.rank_alphas[i] * self.task_loads[k]
@@ -228,20 +227,8 @@ class Generator:
                 # Keep track of totals on rank
                 rank_totals.append((total_load, total_work, unhomed_blocks))
 
-            # Compute assignment array of tasks to ranks
-            assignments = [-1] * self.K
-            for i in range(self.I):
-                for k in range(self.K):
-                    # Some solvers do not output a solution that is exactly 1 albeit binary
-                    if pulp.value(self.chi[i, k]) > 0.5:
-                        assignments[k] = i
-
-            # Create permutation file
-            with open(os.path.join(self.output_dir(), permutation_file), 'w', encoding="utf-8") as f:
-                json.dump(assignments, f)
-
             print("\n# Detailed solution:")
-            for key, value in solution.items():
+            for key, value in details.items():
                 if key == "w_max":
                     continue
                 if value:
@@ -253,11 +240,11 @@ class Generator:
                       f"L = {rank_totals[i][0]}, "
                       f"W = {rank_totals[i][1]}, "
                       f"unhomed: {rank_totals[i][2]}")
-            print("  W_max =", solution["w_max"])
-            print("  assignments =", assignments)
+            print("  W_max =", details["w_max"])
+            print("  assignments =", solution.assignments)
 
-        else: # if self.problem.status == pulp.LpStatusOptimal
-            print("# No solution found")
+        else:
+            print(f"# No solution found (status: {solution.status})")
 
     def setup_milp(self):
         """ Solve a minimization of a mixed-integer linear program. """
@@ -432,7 +419,7 @@ class Generator:
                 self.problem += self.rank_alphas[i] * sum(
                     self.task_loads[k] * self.chi[i, k] for k in range(self.K)) <= self.w_max
                 n_constraints_added += 1
-        elif self.config.is_fwmp:
+        else:
             # Add equation 32
             for i in range(self.I):
                 # For rank i, build a list of all the remote shared blocks for the forth term of equation 30
@@ -462,10 +449,6 @@ class Generator:
                     self.psi[j, i, p] * self.task_communications[p][2]
                     for j in other_machines for p in range(len(self.task_communications))) <= self.w_max
                 n_constraints_added += 1
-        else:
-            # No model selected
-            print("*** ERROR: no model was selected")
-            sys.exit(1)
 
         # Report on added constraints
         end_time = time.perf_counter()
@@ -490,8 +473,8 @@ class Generator:
         if n_constraints_equal == n_constraints_theory:
             print(f"  {n_constraints_equal} equality constraints correctly added")
         else:
-            print(f"*** ERROR: incorrect number of equality constrainsts added: {n_constraints_equal} <> {n_constraints_theory}")
-            sys.exit(1)
+            raise RuntimeError(
+                f"incorrect number of equality constraints added: {n_constraints_equal} <> {n_constraints_theory}")
 
         # Report on computed vs theoretical maximum number of inequality constraints were added
         n_constraints_theory = self.I * ((self.K + 1) * self.N + 1)
@@ -502,137 +485,3 @@ class Generator:
         if self.config.node_memory_bound < math.inf:
             n_constraints_theory += self.I * self.K // self.Q
         print(f"  {n_constraints_inequ} inequality constraints added out of a theoretical maximum of {n_constraints_theory}")
-
-    def write_lp_to_file(self, file_name : str):
-        """Generate the problem file .pl"""
-        self.problem.writeLP(file_name)
-
-    def write_mps_to_file(self, file_name : str):
-        """Generate the problem file .mps"""
-        self.problem.writeMPS(file_name)
-
-    @staticmethod
-    def permute(permutation_file: str, data_files: list, file_prefix: str):
-        """Apply permutation"""
-        new_contents = {}
-        new_task_map = {}
-        new_communication_map = {}
-        task_id = 0
-
-        # Read permutation data
-        permutation = {}
-        with open(permutation_file, 'r', encoding="utf-8") as f:
-            permutation = json.load(f)
-
-        print(f"\nProcess permutation={permutation}\n")
-
-        # Iterate over data files in rank order, matching the task order used to build the problem
-        data_files = find_rank_files(data_files)
-        for data_file in data_files:
-
-            # Get content file
-            data_json = None
-            with open(data_file, 'r', encoding="utf-8") as f:
-                data_json = json.load(f)
-
-            rank = rank_of_file(data_file)
-
-            # Get tasks
-            tasks = data_json["phases"][0].get("tasks")
-            if tasks is not None and len(tasks) > 0:
-                for task in tasks:
-                    if "user_defined" in task:
-                        new_rank = permutation[task_id]
-
-                        # Create dict
-                        if new_task_map.get(new_rank) is None:
-                            new_task_map[new_rank] = []
-
-                        # Add task into the rank
-                        new_task_map[new_rank].append(task)
-
-                        # Increments counters
-                        task_id += 1
-
-            # Get communications
-            communications = data_json["phases"][0].get("communications")
-            if communications is not None and len(communications) > 0:
-                for communication in communications:
-                    # Get from task id
-                    from_task = communication["from"]
-                    from_task_id = from_task.get("id", from_task.get("seq_id"))
-
-                    # Create dict
-                    if new_communication_map.get(from_task_id) is None:
-                        new_communication_map[from_task_id] = []
-
-                    # Add communication into the rank
-                    new_communication_map[from_task_id].append(communication)
-
-            # New content
-            new_contents[rank] = data_json
-
-        # Create new JSON
-        for data_file in data_files:
-            rank = rank_of_file(data_file)
-
-            if rank in new_task_map:
-                # Get phase index
-                index_phase: int = 1
-
-                # data json
-                data_json = new_contents[rank]
-                data_json["phases"].append({
-                    "id": index_phase,
-                    "tasks": []
-                })
-
-                # Apply permutations
-                for task in new_task_map[rank]:
-                    # Add task
-                    data_json["phases"][index_phase]["tasks"].append(task)
-
-                    # Get task id
-                    entity = task.get("entity")
-                    task_id = entity.get("id", entity.get("seq_id"))
-
-                    # add communications
-                    if new_communication_map.get(task_id) is not None:
-                        for commmunications in new_communication_map.get(task_id):
-                            if data_json["phases"][index_phase].get("commmunications") is None:
-                                data_json["phases"][index_phase]["commmunications"] = []
-
-                            data_json["phases"][index_phase]["commmunications"].append(commmunications)
-            else:
-                print(f"NO PERMUTATION for data file: {data_file}, rank: {rank}\n")
-
-            # Create output filename
-            output_permuted_filename = file_prefix + data_file.split("/").pop()
-            output_permuted_file = os.path.join(Generator.output_dir(), output_permuted_filename)
-            print(f"Generate permuted file: {output_permuted_file}, rank: {rank}")
-
-            # Create output file
-            with open(output_permuted_file, 'w', encoding="utf-8") as f:
-                json.dump(data_json, f)
-
-    @staticmethod
-    def solve_problem(problem, solver_name: str):
-        """Solve the given problem"""
-
-        # Get PuLP solver
-        solver = pulp.getSolver(solver=solver_name, keepFiles=True)
-
-        # Set solver
-        problem.setSolver(solver)
-
-        # Solve the problem
-        problem.solve()
-
-    @staticmethod
-    def output_dir(output_dirname: str = "output") -> str:
-        """Get and create output dir"""
-        output_dir = os.path.join(os.path.dirname(__file__), "../..", output_dirname)
-        if os.path.isdir(output_dir) is False:
-            os.mkdir(output_dir)
-
-        return output_dir

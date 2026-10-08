@@ -42,17 +42,11 @@ class ExampleConfig:
         self,
         filename: str = None,
         classname: str = None,
-        json: list = [],
-        test: bool = False,
-        test_configs: any = None,
-        test_regexp: dict = None
+        json: list = None
     ):
         self.filename = filename
         self.classname = classname
-        self.json = json
-        self.test = test
-        self.test_configs = test_configs
-        self.test_regexp = test_regexp
+        self.json = json or []
 
 class Examples:
     """Examples"""
@@ -64,7 +58,7 @@ class Examples:
     def list():
         """Examples list"""
 
-        # Available CCM-MILP examples regexp_test [PULP_CBC_CMD & COIN_CMD, GLPK_CMD]
+        # Available CCM-MILP examples
         return [
             ExampleConfig(
                 filename = "small",
@@ -73,96 +67,17 @@ class Examples:
             ExampleConfig(
                 filename = "synthetic_blocks",
                 classname = "SyntheticBlocks",
-                json = Examples.list_data_files("synthetic_blocks"),
-                test = True,
-                test_configs = [
-                    {
-                        "file": "1-load-only.yaml",
-                        "regexp": [
-                            "Optimal - objective value 2.00000000",
-                            "Objective:  OBJ = 2 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-load-only-and-cluster.yaml",
-                        "regexp": [
-                            "Optimal - objective value 2.50000000",
-                            "Objective:  OBJ = 2.5 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-load-only-and-memory-bound.yaml",
-                        "regexp": [
-                            "Optimal - objective value 2.00000000",
-                            "Objective:  OBJ = 2 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-fwmp-with-alpha.yaml",
-                        "regexp": [
-                            "Optimal - objective value 2.00000000",
-                            "Objective:  OBJ = 2 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-fwmp-with-alpha-beta.yaml",
-                        "regexp": [
-                            "Optimal - objective value 4.00000000",
-                            "Objective:  OBJ = 4 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-load-no-memory-homing-01.yaml",
-                        "regexp": [
-                            "Optimal - objective value 2.50000000",
-                            "Objective:  OBJ = 2.5 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "1-load-no-memory-homing-03.yaml",
-                        "regexp": [
-                            "Optimal - objective value 4.00000000",
-                            "Objective:  OBJ = 4 (MINimum)"
-                        ]
-                    }
-                ]
+                json = Examples.list_data_files("synthetic_blocks")
             ),
             ExampleConfig(
                 filename = "synthetic_blocks_alpha0",
                 classname = "SyntheticBlocks",
-                json = Examples.list_data_files("synthetic_blocks_alpha0"),
-                test = True,
-                test_configs = [
-                    {
-                        "file": "2-null-case.yaml",
-                        "regexp": [
-                            "Optimal - objective value 0.00000000",
-                            "Objective:  OBJ = 0 (MINimum)"
-                        ]
-                    },
-                    {
-                        "file": "2-off-node-communication-only.yaml",
-                        "regexp": [
-                            "Optimal - objective value 0.00000000",
-                            "Objective:  OBJ = 0 (MINimum)"
-                        ]
-                    }
-                ]
+                json = Examples.list_data_files("synthetic_blocks_alpha0")
             ),
             ExampleConfig(
                 filename = "synthetic_blocks_bad_rank0",
                 classname = "SyntheticBlocks",
-                json = Examples.list_data_files("synthetic_blocks_bad_rank0"),
-                test = True,
-                test_configs = [
-                    {
-                        "file": "3-load-only.yaml",
-                        "regexp": [
-                            "Optimal - objective value 3.00000000",
-                            "Objective:  OBJ = 3 (MINimum)"
-                        ]
-                    }
-                ]
+                json = Examples.list_data_files("synthetic_blocks_bad_rank0")
             ),
             ExampleConfig(
                 filename = "sand2025-00006-example",

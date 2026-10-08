@@ -36,22 +36,14 @@
 import argparse
 import sys
 
-from ccm_milp.generator import Generator
+from ccm_milp.permute import permute
 
 # Globales variables
 file_separator: str = ' '
 
-def run_batch(permutation_file: str, file_input_json_files: str, file_prefix: str):
+def run_batch(permutation_file: str, file_input_json_files: str, output_dir: str):
     """Run permutation"""
-    # Read input json data
-    datafiles = file_input_json_files.split(file_separator)
-
-    # Call permute function
-    Generator.permute(
-        permutation_file = permutation_file,
-        data_files = datafiles,
-        file_prefix = file_prefix
-    )
+    permute(permutation_file, file_input_json_files.split(file_separator), output_dir)
 
 def main():
     """Main"""
@@ -64,17 +56,17 @@ def main():
 
     parser.add_argument("-f", "--permutation-file", help="The permutation file in JSON", default=None)
     parser.add_argument("-i", "--input-json-files", help="The input data file in JSON", default=None)
-    parser.add_argument("-o", "--output-file-prefix", help="The output file prefix", default="permuted_")
+    parser.add_argument("-o", "--output-dir", help="The output directory", default="output/permuted")
 
     # Get options
     args = parser.parse_args()
     permutation_file = args.permutation_file
     input_json_files = args.input_json_files
-    output_file_prefix = args.output_file_prefix
+    output_dir = args.output_dir
 
     # Retrieve parameters in batch mode
-    if permutation_file and output_file_prefix and input_json_files:
-        run_batch(permutation_file, input_json_files, output_file_prefix)
+    if permutation_file and output_dir and input_json_files:
+        run_batch(permutation_file, input_json_files, output_dir)
     else:
         print(f"Missing aruments: (permutation-file = {permutation_file} / input-json-files = {input_json_files})")
         sys.exit(1)

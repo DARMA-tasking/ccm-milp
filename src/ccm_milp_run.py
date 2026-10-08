@@ -43,6 +43,7 @@ import sys
 from ccm_milp.configuration import Configuration, load_yaml
 from ccm_milp.data import load_rank_files
 from ccm_milp.generator import Generator
+from ccm_milp.permute import permute, write_permutation
 from ccm_milp.tools import Tools
 
 # Add global path
@@ -129,26 +130,17 @@ def main():
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
     # Generate linear program and solve it when requested
+    output_dir = "output"
     ccm_milp_generator = Generator(config, data)
+    ccm_milp_generator.generate_problem(output_dir)
     if solver_name:
-        # Generate and solve
-        ccm_milp_generator.generate_problem_and_solve(solver_name)
-
-        # Report solution to linear program when found
-        permutation_file: str =  ccm_example.filename + "_" + "permutation.json"
-        ccm_milp_generator.output_solution(permutation_file)
-
-        if len(ccm_example.json) > 0:
-            # Call permute function
-            Generator.permute(
-                permutation_file = os.path.join(Generator.output_dir(), permutation_file),
-                data_files = ccm_example.json,
-                file_prefix="permuted_"
-            )
-
+        solution = ccm_milp_generator.solve(solver_name)
+        ccm_milp_generator.report_solution(solution)
+        if solution.is_optimal and ccm_example is not None and len(ccm_example.json) > 0:
+            permutation_file = os.path.join(output_dir, "permutation.json")
+            write_permutation(solution.assignments, permutation_file)
+            permute(permutation_file, ccm_example.json, os.path.join(output_dir, "permuted"))
     else:
-        # Generate only
-        ccm_milp_generator.generate_problem()
         print("\n# No LP solve requested")
 
 if __name__ == "__main__":
