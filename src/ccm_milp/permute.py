@@ -74,18 +74,10 @@ def permute(permutation_file: str, data_files: list, output_dir: str) -> list:
         tasks = data_json["phases"][0].get("tasks")
         if tasks is not None and len(tasks) > 0:
             for task in tasks:
-                if "user_defined" in task:
-                    new_rank = permutation[task_id]
-
-                    # Create dict
-                    if new_task_map.get(new_rank) is None:
-                        new_task_map[new_rank] = []
-
-                    # Add task into the rank
-                    new_task_map[new_rank].append(task)
-
-                    # Increments counters
-                    task_id += 1
+                if task_id >= len(permutation):
+                    raise ValueError(f"permutation has {len(permutation)} entries but the data has more tasks")
+                new_task_map.setdefault(permutation[task_id], []).append(task)
+                task_id += 1
 
         # Get communications
         communications = data_json["phases"][0].get("communications")
@@ -104,6 +96,9 @@ def permute(permutation_file: str, data_files: list, output_dir: str) -> list:
 
         # New content
         new_contents[rank] = data_json
+
+    if task_id != len(permutation):
+        raise ValueError(f"permutation has {len(permutation)} entries but the data has {task_id} tasks")
 
     # Create new JSON
     for data_file in data_files:
@@ -131,11 +126,8 @@ def permute(permutation_file: str, data_files: list, output_dir: str) -> list:
 
                 # add communications
                 if new_communication_map.get(task_id) is not None:
-                    for commmunications in new_communication_map.get(task_id):
-                        if data_json["phases"][index_phase].get("commmunications") is None:
-                            data_json["phases"][index_phase]["commmunications"] = []
-
-                        data_json["phases"][index_phase]["commmunications"].append(commmunications)
+                    data_json["phases"][index_phase].setdefault("communications", []).extend(
+                        new_communication_map[task_id])
         else:
             print(f"NO PERMUTATION for data file: {data_file}, rank: {rank}\n")
 

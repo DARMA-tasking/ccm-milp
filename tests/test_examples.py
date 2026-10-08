@@ -77,5 +77,53 @@ class TestExamples(unittest.TestCase):
         for name, size in expected_sizes.items():
             self.assertEqual(len(getattr(data, name)), size, f"{name}: {getattr(data, name)}")
 
+def write_rank_files(directory: str, ranks: list):
+    """Write one rank file per (tasks, communications) pair, with tasks given as (id, load, shared_id, shared_bytes)"""
+    def entity(obj_id):
+        return {"type": "object", "id": obj_id}
+    for rank, (tasks, communications) in enumerate(ranks):
+        phase = {
+            "id": 0,
+            "tasks": [{
+                "entity": entity(obj_id),
+                "time": load,
+                "user_defined": {"shared_id": shared_id, "shared_bytes": shared_bytes}
+            } for obj_id, load, shared_id, shared_bytes in tasks],
+            "communications": [
+                {"from": entity(src), "to": entity(dst), "bytes": size} for src, dst, size in communications]}
+        with open(os.path.join(directory, f"test.{rank}.json"), 'w', encoding="utf-8") as f:
+            json.dump({"metadata": {"rank": rank}, "phases": [phase]}, f)
+
+class TestDataParsing(unittest.TestCase):
+    """Regression tests for parsing bugs that silently produced wrong problems"""
+
+    def test_communications_use_task_indices(self):
+        """Communication endpoints are entity ids, which must be mapped to task indices"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [
+                ([(2883587, 1.0, 0, 1.0), (1048579, 1.0, 0, 1.0)], [(2883587, 524291, 8.0)]),
+                ([(524291, 1.0, 1, 1.0)], [(524291, 1048579, 4.0)]),
+            ])
+            data = load_rank_files([data_dir], Configuration())
+        self.assertEqual(data.task_communications, [[0, 2, 8.0], [2, 1, 4.0]])
+
+    def test_unknown_communication_task_is_rejected(self):
+        """A communication to a task that does not exist is an error"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [([(10, 1.0, 0, 1.0)], [(10, 99, 1.0)])])
+            with self.assertRaisesRegex(ValueError, "unknown task id 99"):
+                load_rank_files([data_dir], Configuration())
+
+    def test_block_arrays_stay_aligned(self):
+        """Block sizes, homes, and task mappings describe the same block at each index"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [
+                ([(0, 1.0, 1, 9.0)], []),
+                ([(1, 1.0, 2, 5.0)], []),
+            ])
+            data = load_rank_files([data_dir], Configuration())
+        blocks = set(zip(data.memory_blocks, data.memory_block_home, map(tuple, data.task_memory_block_mapping)))
+        self.assertEqual(blocks, {(9.0, 0, (0,)), (5.0, 1, (1,))})
+
 if __name__ == "__main__":
     unittest.main()

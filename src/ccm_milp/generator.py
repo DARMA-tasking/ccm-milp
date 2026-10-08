@@ -246,6 +246,15 @@ class Generator:
         else:
             print(f"# No solution found (status: {solution.status})")
 
+    def rank_memory(self, i: int, k=None):
+        """Memory of task baselines and blocks on rank i, plus the overhead of task k when given"""
+        memory = (
+            sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
+            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N)))
+        if k is not None:
+            memory += self.task_M_overhead[k] * self.chi[i, k]
+        return memory
+
     def setup_milp(self):
         """ Solve a minimization of a mixed-integer linear program. """
         # instantiante LP minimization problem
@@ -306,37 +315,19 @@ class Generator:
         print(f"  added {n_constraints_added} shared blocks constraints (18) & (19) in {end_time - start_time:0.4f}s")
         n_constraints_inequ += n_constraints_added
 
-        n_constraints_notin = 0
+        # A single memory constraint per rank or node suffices when all task overheads are nil
+        overhead_tasks = range(self.K) if any(self.task_M_overhead) else [None]
+
         # Include rank memory constraints when requested
         if self.config.rank_memory_bound < math.inf:
             start_time = time.perf_counter()
             n_constraints_added = 0
 
-            # Check whether all task memory overheads are nil
-            all_task_M_overhead_zero = True
-            for k in range(self.K):
-                if self.task_M_overhead[k]:
-                    all_task_M_overhead_zero = False
-
             # Add equation 20
             for i in range(self.I):
-                if all_task_M_overhead_zero:
-                    # Only one constraint when all task working bytes are nil
-                    self.problem += (
-                        sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
-                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                    ) <= (self.rank_M_inf[i] - self.rank_M_baseline[i])
+                for k in overhead_tasks:
+                    self.problem += self.rank_memory(i, k) <= self.rank_M_inf[i] - self.rank_M_baseline[i]
                     n_constraints_added += 1
-                    n_constraints_notin += self.K - 1
-                else:
-                    # Generate all K constraints otherwise
-                    for k in range(self.K):
-                        self.problem += (
-                            sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
-                            self.task_M_overhead[k] * self.chi[i, k] +
-                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                        ) <= (self.rank_M_inf[i] - self.rank_M_baseline[i])
-                        n_constraints_added += 1
 
             # Report on added constraints
             end_time = time.perf_counter()
@@ -348,35 +339,13 @@ class Generator:
             start_time = time.perf_counter()
             n_constraints_added = 0
 
-            # Check whether all task memory overheads are nil
-            all_task_M_overhead_zero = True
-            for k in range(self.K):
-                if self.task_M_overhead[k]:
-                    all_task_M_overhead_zero = False
-
             # Add equation 21
             for h in range(self.I // self.Q):
-                if all_task_M_overhead_zero:
-                    # Only one constraint when all task working bytes are nil
-                    self.problem += (sum(
-                        sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
-                        sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                        for i in range(h * self.Q, (h + 1) * self.Q))
-                    ) <= (self.node_M_inf[h] - sum(
-                        self.rank_M_baseline[i] for i in range(h * self.Q, (h + 1) * self.Q)))
+                node_ranks = range(h * self.Q, (h + 1) * self.Q)
+                for k in overhead_tasks:
+                    self.problem += sum(self.rank_memory(i, k) for i in node_ranks) <= (
+                        self.node_M_inf[h] - sum(self.rank_M_baseline[i] for i in node_ranks))
                     n_constraints_added += 1
-                    n_constraints_notin += self.K - 1
-                else:
-                    # Generate all K constraints otherwise
-                    for k in range(self.K):
-                        self.problem += (sum(
-                            sum(self.task_M_baseline[l] * self.chi[i, l] for l in range(self.K)) +
-                            self.task_M_overhead[k] * self.chi[i, k] +
-                            sum(self.memory_blocks[n] * self.phi[i, n] for n in range(self.N))
-                            for i in range(h * self.Q, (h + 1) * self.Q))
-                        ) <= (self.node_M_inf[h] - sum(
-                            self.rank_M_baseline[i] for i in range((h - 1) * self.Q, h * self.Q)))
-                        n_constraints_added += 1
 
             # Report on added constraints
             end_time = time.perf_counter()
