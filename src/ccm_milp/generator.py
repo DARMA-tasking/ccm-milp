@@ -43,7 +43,7 @@ import multiprocessing
 import shutil
 import pulp
 from .configuration import Configuration
-from .data import Data
+from .data import find_rank_files, rank_of_file
 
 class Generator:
     """Manage CCM-MILP problem: setup, generate, and solve"""
@@ -526,13 +526,8 @@ class Generator:
 
         print(f"\nProcess permutation={permutation}\n")
 
-        # Permute sorted data
-        def sort_func(filepath):
-            """Sort using the int into the file name"""
-            return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
-        data_files.sort(key=sort_func)
-
-        # Sort input data file
+        # Iterate over data files in rank order, matching the task order used to build the problem
+        data_files = find_rank_files(data_files)
         for data_file in data_files:
 
             # Get content file
@@ -540,11 +535,7 @@ class Generator:
             with open(data_file, 'r', encoding="utf-8") as f:
                 data_json = json.load(f)
 
-            # Get rank from filename (/some/path/data.{rank}.json})
-            rank: int = -1
-            if len(data_file.split('.')) > 1:
-                split_data_filename =  data_file.split('.')
-                rank = int(split_data_filename[len(split_data_filename) - 2])
+            rank = rank_of_file(data_file)
 
             # Get tasks
             tasks = data_json["phases"][0].get("tasks")
@@ -583,11 +574,7 @@ class Generator:
 
         # Create new JSON
         for data_file in data_files:
-            # Get rank
-            rank: int = -1
-            if len(data_file.split('.')) > 1:
-                split_data_filename =  data_file.split('.')
-                rank = int(split_data_filename[len(split_data_filename) - 2])
+            rank = rank_of_file(data_file)
 
             if rank in new_task_map:
                 # Get phase index
@@ -627,29 +614,6 @@ class Generator:
             # Create output file
             with open(output_permuted_file, 'w', encoding="utf-8") as f:
                 json.dump(data_json, f)
-
-    @staticmethod
-    def parse_json(
-            data_files: list,
-            ranks_per_node: int = 1,
-            rank_mem_bnd: float = math.inf,
-            node_mem_bnd: float = math.inf,
-            verbose: bool =False) -> Data:
-        """Parse json data files to python"""
-        # Permute sorted data
-        def sort_func(filepath):
-            """Sort using the int into the file name"""
-            return len(filepath.split('.')) > 1 and filepath.split('.')[1] or -1
-        data_files.sort(key=sort_func)
-
-        # Initialize and populate data object
-        if verbose:
-            print("\n# Data files:")
-            for df in data_files:
-                print(f"  {df}")
-        data = Data(ranks_per_node, rank_mem_bnd, node_mem_bnd)
-        data.parse_json(data_files, verbose)
-        return data
 
     @staticmethod
     def solve_problem(problem, solver_name: str):

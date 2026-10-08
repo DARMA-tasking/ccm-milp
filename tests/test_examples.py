@@ -5,6 +5,8 @@ import subprocess
 import json
 import pulp
 
+from ccm_milp.configuration import Configuration
+from ccm_milp.data import load_rank_files
 from ccm_milp.tools import Tools
 from ccm_milp.generator import Generator
 
@@ -198,7 +200,7 @@ class TestExamples(unittest.TestCase):
         synthetic_example = avail_examples[1]
 
         # Parse json data files
-        data = Generator.parse_json(synthetic_example.json)
+        data = load_rank_files(synthetic_example.json, Configuration())
 
         # Check result
         self.assertEqual(

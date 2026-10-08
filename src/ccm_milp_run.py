@@ -33,14 +33,15 @@
 # Questions? Contact darma@sandia.gov
 #
 
+import glob
 import os
-import re
 import argparse
 import importlib
 import sys
 
 # Import classes
 from ccm_milp.configuration import Configuration, load_yaml
+from ccm_milp.data import load_rank_files
 from ccm_milp.generator import Generator
 from ccm_milp.tools import Tools
 
@@ -95,21 +96,6 @@ def run_batch(file_name: str):
         sys.exit(1)
     return ccm_example, file_stem, verbose, Configuration.from_dict(params)
 
-def get_num_ranks(file_prefix : str, file_suffix : str) -> int:
-    data_dir = f"{os.sep}".join(file_prefix.split(os.sep)[:-1])
-    pattern = re.compile(rf"^{file_prefix}.(\d+).{file_suffix}$")
-    highest_rank = 0
-    for name in os.listdir(data_dir):
-        path = os.path.join(data_dir, name)
-        match_result = pattern.search(path)
-        if match_result:
-            rank_id = int(match_result.group(1))
-            highest_rank = max(highest_rank, rank_id)
-    return highest_rank + 1
-
-def get_rank_file_name(file_prefix : str, file_suffix : str, rank_id : int):
-    return f"{file_prefix}.{rank_id}.{file_suffix}"
-
 def main():
     # Manage options
     parser = argparse.ArgumentParser(
@@ -130,19 +116,15 @@ def main():
     else:
         ccm_example, file_stem, verbose, config = run_interactive()
     print(f"\n{config.summary()}")
-    rpn, rank_mem_bnd, node_mem_bnd = config.ranks_per_node, config.rank_memory_bound, config.node_memory_bound
 
     # Manage available examples with JSON
     data = None
     if ccm_example is not None and len(ccm_example.json) > 0:
         # Retrieve data from set of predefined examples
-        data = Generator.parse_json(ccm_example.json, rpn, rank_mem_bnd, node_mem_bnd, verbose)
+        data = load_rank_files(ccm_example.json, config, verbose)
     elif file_stem != '':
         # Retrieve data from specified file stem
-        n_ranks = get_num_ranks(file_stem, "json")
-        print(f"# Number of detected ranks: {n_ranks}")
-        files = [get_rank_file_name(file_stem, "json", rid) for rid in range(n_ranks)]
-        data = Generator.parse_json(files, rpn, rank_mem_bnd, node_mem_bnd, verbose)
+        data = load_rank_files(glob.glob(f"{glob.escape(file_stem)}.*.json"), config, verbose)
     else:
         data = getattr(importlib.import_module("examples.data." + ccm_example.filename), ccm_example.classname)()
 
