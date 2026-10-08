@@ -45,15 +45,9 @@ Everything is written to the output directory (`./output` by default):
 
 A per-task and per-rank report of the solution is also printed. The command exits with status 1 when no optimal solution is found or the input is invalid.
 
-## Running your own problem
-
-1. Write one JSON file per rank, named `<name>.<rank>.json` with ranks numbered from 0, and put them in a directory (see [Input data](#input-data)).
-2. Optionally write a YAML file of [model parameters](#model-parameters).
-3. Run `ccm-milp solve <directory> -c <parameters.yaml>`.
-
 ## Input data
 
-Problems are read from per-rank files in the VT `LBDatafile` JSON format. Only the first phase of each file is used, and the tasks in a rank's file are initially assigned to that rank.
+Problems are read from per-rank files in the VT [`LBDatafile`](https://darma-tasking.github.io/docs/html/node-lb-data.html#lb-data-file-format) JSON format. Only the first phase of each file is used, and the tasks in a rank's file are initially assigned to that rank.
 
 ```json
 {
@@ -83,7 +77,7 @@ Problems are read from per-rank files in the VT `LBDatafile` JSON format. Only t
 | Field | Meaning | Default |
 |---|---|---|
 | `metadata.rank` | Rank of the file; must match the file name when present | file name |
-| `metadata.rank_alpha` | Multiplier applied to the load of tasks on this rank | 1.0 |
+| `metadata.rank_alpha` | Multiplier applied to the load of tasks on this rank, indicating relative slowness of the rank | 1.0 |
 | `entity.id` or `entity.seq_id` | Unique task identifier, referenced by communications | required |
 | `time` | Task load | required |
 | `user_defined.shared_id` | Shared memory block used by the task; the block's home is the rank whose file holds its tasks | no block |
