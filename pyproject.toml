@@ -10,7 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
 dependencies = [
-    "pulp",
+    "pulp<4",
     "pyyaml",
 ]
 
@@ -19,6 +19,9 @@ dev = [
     "pylint",
     "pytest",
 ]
+
+[project.scripts]
+ccm-milp = "ccm_milp.cli:main"
 
 [tool.setuptools.dynamic]
 version = { file = "VERSION" }

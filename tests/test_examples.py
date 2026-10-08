@@ -4,7 +4,7 @@ import tempfile
 import unittest
 import pulp
 
-from ccm_milp.configuration import Configuration, load_yaml
+from ccm_milp.configuration import Configuration
 from ccm_milp.data import load_rank_files, rank_of_file
 from ccm_milp.generator import Generator
 from ccm_milp.permute import permute
@@ -27,20 +27,13 @@ SOLVE_CASES = [
     ("3-load-only.yaml", "synthetic_blocks_bad_rank0", 3.0),
 ]
 
-def load_config(config_file: str) -> Configuration:
-    """Load test parameters, ignoring keys the legacy run script still needs"""
-    params = load_yaml(os.path.join(CONFIG_DIR, config_file))
-    params.pop("example_id", None)
-    params.pop("verbose", None)
-    return Configuration.from_dict(params)
-
 class TestExamples(unittest.TestCase):
     """Class to run tests on examples"""
 
     def test_problem_solver(self):
         """Solve each test case with every available solver and check the objective"""
         for config_file, dataset, expected in SOLVE_CASES:
-            config = load_config(config_file)
+            config = Configuration.from_yaml(os.path.join(CONFIG_DIR, config_file))
             data = load_rank_files([os.path.join(DATA_DIR, dataset)], config)
             for solver_name in pulp.listSolvers(onlyAvailable=True):
                 with self.subTest(config=config_file, solver=solver_name):
