@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "type": "LBDatafile",
+    "rank": 2
+  },
+  "phases": [
+    {
+      "id": 0,
+      "tasks": [
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 16,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 15,
+          "user_defined": {
+            "shared_id": 2,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 17,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 6,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 18,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 2,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 19,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 2.5,
+          "user_defined": {
+            "shared_id": 10,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 20,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 2,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 21,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 6,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 22,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 2.5,
+          "user_defined": {
+            "shared_id": 10,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "type": "LBDatafile",
+    "rank": 1
+  },
+  "phases": [
+    {
+      "id": 0,
+      "tasks": [
+        {
+          "entity": {
+            "home": 1,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 1,
+            "shared_bytes": 10,
+            "task_working_bytes": 0,
+            "task_footprint_bytes": 0,
+            "rank_working_bytes": 0
+          }
+        }
+      ]
+    }
+  ]
+}

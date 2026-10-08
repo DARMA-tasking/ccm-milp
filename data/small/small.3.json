@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "type": "LBDatafile",
+    "rank": 3
+  },
+  "phases": [
+    {
+      "id": 0,
+      "tasks": [
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 23,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 11,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 24,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 15,
+          "user_defined": {
+            "shared_id": 7,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 25,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 3,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 26,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 7,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 27,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 3,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 28,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 11,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 29,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 3,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 30,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 20,
+          "user_defined": {
+            "shared_id": 7,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 3,
+            "migratable": true,
+            "seq_id": 31,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 11,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        }
+      ]
+    }
+  ]
+}
