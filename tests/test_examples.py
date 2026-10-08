@@ -15,16 +15,16 @@ CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
 
 # (parameter file, dataset directory, expected objective value)
 SOLVE_CASES = [
-    ("1-load-only.yaml", "synthetic_blocks", 2.0),
-    ("1-load-only-and-cluster.yaml", "synthetic_blocks", 2.5),
-    ("1-load-only-and-memory-bound.yaml", "synthetic_blocks", 2.0),
-    ("1-fwmp-with-alpha.yaml", "synthetic_blocks", 2.0),
-    ("1-fwmp-with-alpha-beta.yaml", "synthetic_blocks", 4.0),
-    ("1-load-no-memory-homing-01.yaml", "synthetic_blocks", 2.5),
-    ("1-load-no-memory-homing-03.yaml", "synthetic_blocks", 4.0),
-    ("2-null-case.yaml", "synthetic_blocks_alpha0", 0.0),
-    ("2-off-node-communication-only.yaml", "synthetic_blocks_alpha0", 0.0),
-    ("3-load-only.yaml", "synthetic_blocks_bad_rank0", 3.0),
+    ("synthetic-blocks-load-only.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-load-only-and-cluster.yaml", "synthetic_blocks", 2.5),
+    ("synthetic-blocks-load-only-and-memory-bound.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-fwmp-with-alpha.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-fwmp-with-alpha-beta.yaml", "synthetic_blocks", 4.0),
+    ("synthetic-blocks-load-no-memory-homing-01.yaml", "synthetic_blocks", 2.5),
+    ("synthetic-blocks-load-no-memory-homing-03.yaml", "synthetic_blocks", 4.0),
+    ("synthetic-blocks-alpha0-null-case.yaml", "synthetic_blocks_alpha0", 0.0),
+    ("synthetic-blocks-alpha0-off-node-communication-only.yaml", "synthetic_blocks_alpha0", 0.0),
+    ("synthetic-blocks-bad-rank0-load-only.yaml", "synthetic_blocks_bad_rank0", 3.0),
 ]
 
 class TestExamples(unittest.TestCase):
