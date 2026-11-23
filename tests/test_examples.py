@@ -1,262 +1,129 @@
 import os
-import sys
-import unittest
-import subprocess
 import json
+import tempfile
+import unittest
 import pulp
 
-from src.ccm_milp.tools import Tools
-from src.ccm_milp.generator import Generator
+from ccm_milp.configuration import Configuration
+from ccm_milp.data import load_rank_files, rank_of_file
+from ccm_milp.generator import Generator
+from ccm_milp.permute import permute
 
-# Add global path
-sys.path.insert(0, os.path.dirname(os.path.join(os.path.dirname(__file__), "../..")))
-Examples = Tools.import_class("examples.configuration", "Examples")
+ROOT_DIR = os.path.join(os.path.dirname(__file__), "..")
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
+
+# (parameter file, dataset directory, expected objective value)
+SOLVE_CASES = [
+    ("synthetic-blocks-load-only.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-load-only-and-cluster.yaml", "synthetic_blocks", 2.5),
+    ("synthetic-blocks-load-only-and-memory-bound.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-fwmp-with-alpha.yaml", "synthetic_blocks", 2.0),
+    ("synthetic-blocks-fwmp-with-alpha-beta.yaml", "synthetic_blocks", 4.0),
+    ("synthetic-blocks-load-no-memory-homing-01.yaml", "synthetic_blocks", 2.5),
+    ("synthetic-blocks-load-no-memory-homing-03.yaml", "synthetic_blocks", 4.0),
+    ("synthetic-blocks-alpha0-null-case.yaml", "synthetic_blocks_alpha0", 0.0),
+    ("synthetic-blocks-alpha0-off-node-communication-only.yaml", "synthetic_blocks_alpha0", 0.0),
+    ("synthetic-blocks-bad-rank0-load-only.yaml", "synthetic_blocks_bad_rank0", 3.0),
+]
 
 class TestExamples(unittest.TestCase):
     """Class to run tests on examples"""
 
-    # Folder paths
-    root_dir = os.path.join(os.path.dirname(__file__), "..")
-    src_dir = os.path.join(os.path.dirname(__file__), "..", "src")
-    config_dir = os.path.join(os.path.dirname(__file__), "config")
-
     def test_problem_solver(self):
-        """Test all examples"""
-        # Available CCM-MILP examples
-        avail_examples = Examples.list()
-        for example_id, example_config in enumerate(avail_examples):
-            # Only verified example
-            if example_config.test is True:
-
-                # For each different config available
-                for _, test_config in enumerate(example_config.test_configs):
-                    print()
-                    print("-----------------------------------------")
-                    print(f"Example : #{example_id}: {example_config.filename}.{example_config.classname}")
-                    print("-----------------------------------------")
-
-                    # Run CCM MILP to generate problem only
-                    config_file = os.path.join(self.config_dir, test_config.get("file"))
-                    self.assertTrue(os.path.isfile(config_file), f"File: {config_file} does not exist!")
-
-                    print("  Config file: ", test_config.get("file"))
-                    print("  ----------------")
-                    print("")
-
-                    print("  Generate problem")
-                    print("  ----------------")
-                    print("")
-
-                    # Generate linear program without solving it
-                    subprocess.run([
-                        "python",
-                        os.path.join(self.src_dir, "ccm_milp_run.py"),
-                        "-c",
-                        config_file,
-                        "-s",
-                        ''
-                    ], check=True)
-
-                    # Check whether problem file was generated
-                    lp_file = os.path.join(self.src_dir, "problem.lp")
-                    self.assertTrue(os.path.isfile(lp_file), f"File: {lp_file} does not exist!")
-                    mps_file = os.path.join(self.src_dir, "problem.mps")
-                    self.assertTrue(os.path.isfile(mps_file), f"File: {mps_file} does not exist!")
-
-                    print("")
-                    print("  Solve problem")
-                    print("  ----------------")
-
-                    # For each solver available
-                    for solver_name in pulp.listSolvers(onlyAvailable=True):
-                        print("")
-                        print(f"    {solver_name}")
-                        print("    ----------------")
-
-                        # Run the solver on the example problem
-                        subprocess.run([
-                            "python",
-                            os.path.join(self.src_dir, "ccm_milp_solver.py"),
-                            "-s",
-                            solver_name
-                        ], check = True)
-
-                        # clear useless generated files
-                        mps_sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.mps")
-                        lp_sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.lp")
-                        if os.path.isfile(mps_sol_file):
-                            os.remove(mps_sol_file)
-                        if os.path.isfile(lp_sol_file):
-                            os.remove(lp_sol_file)
-
-                        # Check sol file
-                        sol_file = os.path.join(self.root_dir, "CCM_MILP-pulp.sol")
-                        self.assertTrue(os.path.isfile(sol_file), f"File: {sol_file} does not exist!")
-
-                        # Readd the sol file content
-                        output_str = ""
-                        with open(sol_file, 'r', encoding="utf-8") as sol_content:
-                            output_str = sol_content.read()
-                        print(output_str)
-
-                        # Check sol file content
-                        found = False
-                        for reg in test_config.get("regexp"):
-                            if reg in output_str:
-                                print(f"Found {reg}")
-                                found = True
-
-                        # No Regexp found
-                        if found is False:
-                            for reg in test_config.get("regexp"):
-                                self.fail("Regex: not found in .sol")
-
-                        # clear .sol file
-                        os.remove(sol_file)
-
-                    # Clear created files
-                    os.remove(lp_file)
-                    os.remove(mps_file)
+        """Solve each test case with every available solver and check the objective"""
+        for config_file, dataset, expected in SOLVE_CASES:
+            config = Configuration.from_yaml(os.path.join(CONFIG_DIR, config_file))
+            data = load_rank_files([os.path.join(DATA_DIR, dataset)], config)
+            for solver_name in pulp.listSolvers(onlyAvailable=True):
+                with self.subTest(config=config_file, solver=solver_name):
+                    generator = Generator(config, data)
+                    generator.generate_problem()
+                    solution = generator.solve(solver_name)
+                    self.assertTrue(solution.is_optimal, solution.status)
+                    self.assertAlmostEqual(solution.objective, expected, places=6)
 
     def test_permutation(self):
-        """Test permutation """
-        # Get example SyntheticBlock (id: 1)
-        avail_examples = Examples.list()
-        synthetic_example = avail_examples[1]
-
-        # Files
-        output_file_prefix = "test_permuted_"
-        permutation_file   = os.path.join(self.config_dir, "permutation.json")
-
-        # Test all files exists
-        self.assertTrue(os.path.isfile(permutation_file), f"File: {permutation_file} does not exist!")
-        for input_json_file in synthetic_example.json:
-            self.assertTrue(os.path.isfile(input_json_file), f"File: {input_json_file} does not exist!")
-
-        # Command line
-        subprocess.run([
-            "python",
-            os.path.join(self.src_dir, "ccm_milp_permute_json.py"),
-            "--permutation-file=" + permutation_file,
-            "--input-json-files=" + " ".join(synthetic_example.json),
-            "--output-file-prefix=" + output_file_prefix
-        ], check=True)
-
-        permutations = []
+        """Permuted rank files hold the tasks assigned to each rank"""
+        permutation_file = os.path.join(CONFIG_DIR, "permutation.json")
         with open(permutation_file, 'r', encoding="utf-8") as f:
-            permutations = json.load(f)
+            permutation = json.load(f)
 
-        tasks_by_rank = {}
-        for permutation in permutations:
-            if permutation not in tasks_by_rank:
-                tasks_by_rank[permutation] = 1
-            else:
-                tasks_by_rank[permutation] += 1
-
-        # Output files expected
-        output_json_files = []
-        for input_json_file in synthetic_example.json:
-            output_json_files.append(os.path.join(
-                Generator.output_dir(),
-                output_file_prefix + input_json_file.split("/").pop()
-            ))
-
-        # Check files exists
-        for output_json_file in output_json_files:
-            # Check file exists
-            self.assertTrue(os.path.isfile(output_json_file), f"File: {output_json_file} does not exist!")
-
-            # Get the rank from filename
-            rank: int = -1
-            if len(output_json_file.split(".")) > 1:
-                split_output_json_filename =  output_json_file.split(".")
-                rank = int(split_output_json_filename[len(split_output_json_filename) - 2])
-
-            # Load output json
-            output_json = {}
-            with open(output_json_file, 'r', encoding="utf-8") as f:
-                output_json = json.load(f)
-
-            # Get the number of tasks expected for the rank
-            number_of_tasks = len(output_json["phases"][1]["tasks"])
-
-            # Check that the number of tasks expected for the rank is correct
-            print(f"Rank {rank} expected {tasks_by_rank[rank]} task(s), found {number_of_tasks}" )
-            self.assertTrue(
-                len(output_json["phases"][1]["tasks"]) == tasks_by_rank[rank],
-                f"File: {output_json_file} does not exist!"
-            )
-
-            # CLean generated files
-            os.remove(output_json_file)
+        with tempfile.TemporaryDirectory() as output_dir:
+            output_files = permute(
+                permutation_file, [os.path.join(DATA_DIR, "synthetic_blocks")], output_dir)
+            self.assertEqual(len(output_files), 4)
+            for output_file in output_files:
+                rank = rank_of_file(output_file)
+                with open(output_file, 'r', encoding="utf-8") as f:
+                    output_json = json.load(f)
+                self.assertEqual(len(output_json["phases"][1]["tasks"]), permutation.count(rank), output_file)
 
     def test_parse_json(self):
         """Test the JSON parser"""
+        data = load_rank_files([os.path.join(DATA_DIR, "synthetic_blocks")], Configuration())
+        expected_sizes = {
+            "rank_mems": 4,
+            "rank_working_bytes": 4,
+            "task_loads": 9,
+            "task_working_bytes": 9,
+            "task_footprint_bytes": 9,
+            "task_id": 9,
+            "memory_blocks": 5,
+            "memory_block_home": 5,
+            "task_memory_block_mapping": 5,
+            "task_communications": 8,
+        }
+        for name, size in expected_sizes.items():
+            self.assertEqual(len(getattr(data, name)), size, f"{name}: {getattr(data, name)}")
 
-        # Get example SyntheticBlock (id: 1)
-        avail_examples = Examples.list()
-        synthetic_example = avail_examples[1]
+def write_rank_files(directory: str, ranks: list):
+    """Write one rank file per (tasks, communications) pair, with tasks given as (id, load, shared_id, shared_bytes)"""
+    def entity(obj_id):
+        return {"type": "object", "id": obj_id}
+    for rank, (tasks, communications) in enumerate(ranks):
+        phase = {
+            "id": 0,
+            "tasks": [{
+                "entity": entity(obj_id),
+                "time": load,
+                "user_defined": {"shared_id": shared_id, "shared_bytes": shared_bytes}
+            } for obj_id, load, shared_id, shared_bytes in tasks],
+            "communications": [
+                {"from": entity(src), "to": entity(dst), "bytes": size} for src, dst, size in communications]}
+        with open(os.path.join(directory, f"test.{rank}.json"), 'w', encoding="utf-8") as f:
+            json.dump({"metadata": {"rank": rank}, "phases": [phase]}, f)
 
-        # Parse json data files
-        data = Generator.parse_json(synthetic_example.json)
+class TestDataParsing(unittest.TestCase):
+    """Regression tests for parsing bugs that silently produced wrong problems"""
 
-        # Check result
-        self.assertEqual(
-            len(data.rank_mems), 4,
-            f"Bad value for the size of rank_mems: \
-                {len(data.rank_mems)} ({data.rank_mems})"
-        )
-        self.assertEqual(
-            len(data.rank_working_bytes), 4,
-            f"Bad value for the size of rank_working_bytes: \
-                {len(data.rank_working_bytes)} ({data.rank_working_bytes})"
-        )
-        self.assertEqual(
-            len(data.task_loads), 9,
-            f"Bad value for the size of task_loads: \
-                {len(data.task_loads)} ({data.task_loads})"
-        )
-        self.assertEqual(
-            len(data.task_working_bytes), 9,
-            f"Bad value for the size of task_working_bytes: \
-                {len(data.task_working_bytes)} ({data.task_working_bytes})"
-        )
-        self.assertEqual(
-            len(data.task_footprint_bytes), 9,
-            f"Bad value for the size of task_footprint_bytes: \
-                {len(data.task_footprint_bytes)} ({data.task_footprint_bytes})"
-        )
-        self.assertEqual(
-            len(data.task_id), 9,
-            f"Bad value for the size of task_id: \
-                {len(data.task_id)} ({data.task_id})"
-        )
-        self.assertEqual(
-            len(data.memory_blocks), 5,
-            f"Bad value for the size of memory_blocks: \
-                {len(data.memory_blocks)} ({data.memory_blocks})"
-        )
-        self.assertEqual(
-            len(data.memory_block_home), 5,
-            f"Bad value for the size of memory_block_home: \
-                {len(data.memory_block_home)} ({data.memory_block_home})"
-        )
-        self.assertEqual(
-            len(data.task_memory_block_mapping), 5,
-            f"Bad value for the size of task_memory_block_mapping: \
-                {len(data.task_memory_block_mapping)} ({data.task_memory_block_mapping})"
-        )
-        self.assertEqual(
-            len(data.task_communications), 8,
-            f"Bad value for the size of task_communications: \
-                {len(data.task_communications)} ({data.task_communications})"
-        )
+    def test_communications_use_task_indices(self):
+        """Communication endpoints are entity ids, which must be mapped to task indices"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [
+                ([(2883587, 1.0, 0, 1.0), (1048579, 1.0, 0, 1.0)], [(2883587, 524291, 8.0)]),
+                ([(524291, 1.0, 1, 1.0)], [(524291, 1048579, 4.0)]),
+            ])
+            data = load_rank_files([data_dir], Configuration())
+        self.assertEqual(data.task_communications, [[0, 2, 8.0], [2, 1, 4.0]])
 
-    def setUp(self):
-        return
+    def test_unknown_communication_task_is_rejected(self):
+        """A communication to a task that does not exist is an error"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [([(10, 1.0, 0, 1.0)], [(10, 99, 1.0)])])
+            with self.assertRaisesRegex(ValueError, "unknown task id 99"):
+                load_rank_files([data_dir], Configuration())
 
-    def tearDown(self):
-        return
+    def test_block_arrays_stay_aligned(self):
+        """Block sizes, homes, and task mappings describe the same block at each index"""
+        with tempfile.TemporaryDirectory() as data_dir:
+            write_rank_files(data_dir, [
+                ([(0, 1.0, 1, 9.0)], []),
+                ([(1, 1.0, 2, 5.0)], []),
+            ])
+            data = load_rank_files([data_dir], Configuration())
+        blocks = set(zip(data.memory_blocks, data.memory_block_home, map(tuple, data.task_memory_block_mapping)))
+        self.assertEqual(blocks, {(9.0, 0, (0,)), (5.0, 1, (1,))})
 
 if __name__ == "__main__":
     unittest.main()

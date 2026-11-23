@@ -34,62 +34,89 @@
 #
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+import yaml
 
 @dataclass
 class Configuration:
-    """Configuration object"""
-    ranks_per_node: int
-    is_fwmp: bool
-    is_comcp: bool
-    beta: float
-    gamma: float
-    delta: float
-    rank_memory_bound: float
-    node_memory_bound: float
-    preserve_clusters: bool
-
-    def __init__(
-            self,
-            ranks_per_node: int,
-            is_fwmp: bool,
-            beta: float,
-            gamma: float,
-            delta: float,
-            rank_memory_bound: float,
-            node_memory_bound: float,
-            preserve_clusters: bool):
-
-        # Initialize member variables
-        self.ranks_per_node = ranks_per_node
-        self.is_fwmp = is_fwmp
-        self.is_comcp = not is_fwmp
-        self.beta = beta
-        self.gamma = gamma
-        self.delta = delta
-        self.rank_memory_bound = rank_memory_bound
-        self.node_memory_bound = node_memory_bound
-        self.preserve_clusters = preserve_clusters
-
-        # Report member variables
-        print(f"\n# Configured {'Full Work Model' if is_fwmp else 'Compute-Only Memory-Constrained'} problem with:")
-        print(f"  {ranks_per_node} rank{'s' if ranks_per_node > 1 else ''} per node")
-        print(f"  beta = {beta}")
-        print(f"  gamma = {gamma}")
-        print(f"  delta = {delta}")
-        if rank_memory_bound < math.inf:
-            print(f"  rank memory bound = {rank_memory_bound}")
-        if node_memory_bound < math.inf:
-            print(f"  node memory bound = {node_memory_bound}")
-        if preserve_clusters:
-            print("  while preserving block clusters")
-
-@dataclass
-class DefaultParameters:
-    """Default parameters"""
+    """CCM model parameters"""
     ranks_per_node: int = 1
+    is_fwmp: bool = False
     beta: float = 0.0
     gamma: float = 0.0
     delta: float = 0.0
     rank_memory_bound: float = math.inf
     node_memory_bound: float = math.inf
+    preserve_clusters: bool = False
+
+    def __post_init__(self):
+        if self.ranks_per_node < 1:
+            raise ValueError(f"ranks_per_node must be at least 1, got {self.ranks_per_node}")
+        for name in ("beta", "gamma", "delta"):
+            if getattr(self, name) < 0:
+                raise ValueError(f"{name} must be non-negative, got {getattr(self, name)}")
+        for name in ("rank_memory_bound", "node_memory_bound"):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"{name} must be positive, got {getattr(self, name)}")
+
+    @property
+    def is_comcp(self) -> bool:
+        """Whether this is the compute-only memory-constrained problem"""
+        return not self.is_fwmp
+
+    @classmethod
+    def from_dict(cls, params: dict) -> "Configuration":
+        """Build a configuration from a dict keyed by field name, coercing and validating values"""
+        types = {f.name: f.type for f in fields(cls)}
+        unknown = sorted(set(params) - set(types))
+        if unknown:
+            raise ValueError(
+                f"unknown parameter(s): {', '.join(unknown)}; valid parameters are: {', '.join(types)}")
+        return cls(**{k: _coerce(k, v, types[k]) for k, v in params.items()})
+
+    @classmethod
+    def from_yaml(cls, path: str) -> "Configuration":
+        """Build a configuration from a YAML file of parameters"""
+        return cls.from_dict(load_yaml(path))
+
+    def summary(self) -> str:
+        """Human-readable description of the configured problem"""
+        model = "Full Work Model" if self.is_fwmp else "Compute-Only Memory-Constrained"
+        lines = [
+            f"# Configured {model} problem with:",
+            f"  {self.ranks_per_node} rank{'s' if self.ranks_per_node > 1 else ''} per node",
+            f"  beta = {self.beta}",
+            f"  gamma = {self.gamma}",
+            f"  delta = {self.delta}"]
+        if self.rank_memory_bound < math.inf:
+            lines.append(f"  rank memory bound = {self.rank_memory_bound}")
+        if self.node_memory_bound < math.inf:
+            lines.append(f"  node memory bound = {self.node_memory_bound}")
+        if self.preserve_clusters:
+            lines.append("  while preserving block clusters")
+        return "\n".join(lines)
+
+def load_yaml(path: str) -> dict:
+    """Load a YAML file whose top level is a mapping"""
+    with open(path, encoding="utf-8") as f:
+        params = yaml.safe_load(f)
+    if params is None:
+        return {}
+    if not isinstance(params, dict):
+        raise ValueError(f"{path}: expected a mapping of parameter names to values")
+    return params
+
+def _coerce(name: str, value, target: type):
+    """Convert a parameter value to its field type"""
+    if target is bool:
+        if not isinstance(value, bool):
+            raise ValueError(f"{name} must be true or false, got {value!r}")
+        return value
+    expected = f"{name} must be {'an integer' if target is int else 'a number'}, got {value!r}"
+    try:
+        converted = target(value)
+    except (TypeError, ValueError) as e:
+        raise ValueError(expected) from e
+    if isinstance(value, bool) or (target is int and converted != value):
+        raise ValueError(expected)
+    return converted

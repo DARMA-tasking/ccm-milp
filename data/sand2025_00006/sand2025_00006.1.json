@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "type": "LBDatafile",
+    "rank": 1
+  },
+  "phases": [
+    {
+      "id": 0,
+      "tasks": [
+        {
+          "entity": {
+            "home": 1,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5.0,
+          "user_defined": {
+            "shared_id": 1,
+            "shared_bytes": 15000.0,
+            "task_working_bytes": 0,
+            "task_footprint_bytes": 0,
+            "rank_working_bytes": 0
+          }
+        }
+      ],
+      "communications": [
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 1,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "to": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 1,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 20000.0
+        }
+      ]
+    }
+  ]
+}

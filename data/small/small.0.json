@@ -1,0 +1,298 @@
+{
+  "metadata": {
+    "type": "LBDatafile",
+    "rank": 0
+  },
+  "phases": [
+    {
+      "id": 0,
+      "tasks": [
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 0,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 4,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 1,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 35,
+          "user_defined": {
+            "shared_id": 4,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 8,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 3,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 25,
+          "user_defined": {
+            "shared_id": 4,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 4,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 0,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 5,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 20,
+          "user_defined": {
+            "shared_id": 4,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 6,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 10,
+          "user_defined": {
+            "shared_id": 0,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 7,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 20,
+          "user_defined": {
+            "shared_id": 8,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 8,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 15,
+          "user_defined": {
+            "shared_id": 0,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 9,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 30,
+          "user_defined": {
+            "shared_id": 4,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        },
+        {
+          "entity": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 10,
+            "type": "object"
+          },
+          "node": 0,
+          "resource": "cpu",
+          "time": 5,
+          "user_defined": {
+            "shared_id": 8,
+            "shared_bytes": 1600000000,
+            "task_working_bytes": 110000000,
+            "task_footprint_bytes": 1024,
+            "rank_working_bytes": 980000000
+          }
+        }
+      ],
+      "communications": [
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 1,
+            "type": "object"
+          },
+          "to": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 4,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 1073741824
+        },
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 5,
+            "type": "object"
+          },
+          "to": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 6,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 2147483648
+        },
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 8,
+            "type": "object"
+          },
+          "to": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 4294967296
+        },
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 8,
+            "type": "object"
+          },
+          "to": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 1,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 8589934592
+        },
+        {
+          "type": "SendRecv",
+          "from": {
+            "home": 0,
+            "migratable": true,
+            "seq_id": 2,
+            "type": "object"
+          },
+          "to": {
+            "home": 2,
+            "migratable": true,
+            "seq_id": 16,
+            "type": "object"
+          },
+          "messages": 1,
+          "bytes": 8589934592
+        }
+      ]
+    }
+  ]
+}
